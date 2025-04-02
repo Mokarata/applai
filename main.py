@@ -1,11 +1,22 @@
 from fastapi import FastAPI
-from dotenv import load_dotenv
+from app.api import api_router
+from app.db import create_tables
 
-load_dotenv()
 
-app = FastAPI(title="AI Cover Letter Generator", description="Generate cover letters using AI", version="0.1.0")
+# Create Database tables 
+create_tables()
+
+app = FastAPI(title="AI Cover Letter Generator")
+
+# Include API router
+app.include_router(api_router, prefix="/api")
 
 @app.get("/")
-async def root():
-    return {"message": "Welcome to the AI Cover Letter Generator!"}
+def read_root():
+    return {"message": "Welcome to AI Letter Generator API"}
 
+@app.post("/recreate-tables")
+def recreate_tables():
+    from app.db import create_tables
+    create_tables()
+    return {"message": "Tables recreated successfully"}

@@ -10,7 +10,7 @@ class User(Base):
     name = Column(String, index=True)
     surname = Column(String, index=True)
     email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
+    password = Column(String)
     cv_text = Column(String)
     is_active = Column(Boolean, default=True)
 

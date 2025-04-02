@@ -11,7 +11,7 @@ class JobBase(BaseModel):
     
 class JobCreate(JobBase):
     """ Schema for creating a new job."""
-    pass
+    user_id: int
 
 class JobResponse(JobBase):
     """ Schema for job response, include ID and status."""
@@ -20,4 +20,4 @@ class JobResponse(JobBase):
 
     class Config:
         """ Configure Pydantic to work with ORM."""
-        orm_mode = True
+        from_attributes = True
