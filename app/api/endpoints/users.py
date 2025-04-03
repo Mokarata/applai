@@ -43,6 +43,12 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 
     return new_user
 
+@router.get("/", response_model=List[UserResponse])
+def get_users(db: Session = Depends(get_db)):
+    """ Get all users from the database. """
+    users = db.query(User).all()
+    return users
+
 @router.get("/{user_id}", response_model=UserResponse)
 def get_user(user_id: int, db: Session = Depends(get_db)):
     """ Get user by ID form the data base."""
@@ -53,3 +59,20 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
             detail="User not found"
         )
     return user
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    """ Delete a user by ID. """
+    # Verify user exists
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Delete user
+    db.delete(user)
+    db.commit()
+
+    return None

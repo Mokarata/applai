@@ -94,3 +94,26 @@ def get_job_cover_letters(job_id: int, db: Session = Depends(get_db)):
     # Get all cover letters for the job
     cover_letters = db.query(CoverLetter).filter(CoverLetter.job_id == job_id).all()
     return cover_letters
+
+@router.get("/", response_model=List[CoverLetterResponse])
+def list_cover_letters(db: Session = Depends(get_db)):
+    """ Get all cover letters from the database. """
+    cover_letters = db.query(CoverLetter).all()
+    return cover_letters
+
+@router.delete("/{cover_letter_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_cover_letter(cover_letter_id: int, db: Session = Depends(get_db)):
+    """ Delete a cover letter by ID. """
+    # Verify cover letter exists
+    cover_letter = db.query(CoverLetter).filter(CoverLetter.id == cover_letter_id).first()
+    if not cover_letter:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Cover letter not found"
+        )
+    
+    # Delete cover letter
+    db.delete(cover_letter)
+    db.commit()
+
+    return None

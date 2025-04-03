@@ -46,3 +46,28 @@ def get_job(job_id: int, db: Session = Depends(get_db)):
             detail="Job not found"
         )
     return job
+
+@router.get("/", response_model=List[JobResponse])
+def get_jobs(db: Session = Depends(get_db)):
+    """ Get all jobs from the database. """
+    jobs = db.query(Job).all()
+    return jobs
+
+@router.delete("/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_job(job_id: int, db: Session = Depends(get_db)):
+    """ Delete a job by ID. """
+    # Verify job exists
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job not found"
+        )
+    
+    # Delete job
+    db.delete(job)
+    db.commit()
+
+    return None
+
+
