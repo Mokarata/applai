@@ -1,4 +1,3 @@
-# test_schemas.py
 from app.schemas.user import UserBase, UserCreate, UserResponse
 from app.schemas.job import JobBase, JobCreate, JobResponse
 from app.schemas.cover_letter import CoverLetterBase, CoverLetterCreate, CoverLetterResponse
@@ -13,17 +12,17 @@ def test_user_schemas():
         "cv_text": "Experienced developer"
     }
     user = UserBase(**user_data)
-    print(f"UserBase validated: {user.dict()}")
+    print(f"UserBase validated: {user.model_dump()}")
     
     # Test UserCreate
     user_create_data = {**user_data, "password": "securepassword"}
     user_create = UserCreate(**user_create_data)
-    print(f"UserCreate validated: {user_create.dict()}")
+    print(f"UserCreate validated: {user_create.model_dump()}")
     
     # Test UserResponse
     user_response_data = {**user_data, "id": 1, "is_active": True}
     user_response = UserResponse(**user_response_data)
-    print(f"UserResponse validated: {user_response.dict()}")
+    print(f"UserResponse validated: {user_response.model_dump()}")
 
 def test_job_schemas():
     # Test JobBase
@@ -34,16 +33,17 @@ def test_job_schemas():
         "location": "Remote"
     }
     job = JobBase(**job_data)
-    print(f"JobBase validated: {job.dict()}")
+    print(f"JobBase validated: {job.model_dump()}")
     
-    # Test JobCreate
-    job_create = JobCreate(**job_data)
-    print(f"JobCreate validated: {job_create.dict()}")
+    # Test JobCreate - Add user_id which is required by JobCreate schema
+    job_create_data = {**job_data, "user_id": 1}
+    job_create = JobCreate(**job_create_data)
+    print(f"JobCreate validated: {job_create.model_dump()}")
     
     # Test JobResponse
     job_response_data = {**job_data, "id": 1, "user_id": 1}
     job_response = JobResponse(**job_response_data)
-    print(f"JobResponse validated: {job_response.dict()}")
+    print(f"JobResponse validated: {job_response.model_dump()}")
 
 def test_cover_letter_schemas():
     # Test CoverLetterBase
@@ -52,11 +52,11 @@ def test_cover_letter_schemas():
         "cover_letter_text": "Dear Hiring Manager..."
     }
     cover_letter = CoverLetterBase(**cover_letter_data)
-    print(f"CoverLetterBase validated: {cover_letter.dict()}")
+    print(f"CoverLetterBase validated: {cover_letter.model_dump()}")
     
     # Test CoverLetterCreate
     cover_letter_create = CoverLetterCreate(**cover_letter_data)
-    print(f"CoverLetterCreate validated: {cover_letter_create.dict()}")
+    print(f"CoverLetterCreate validated: {cover_letter_create.model_dump()}")
     
     # Test CoverLetterResponse
     cover_letter_response_data = {
@@ -67,7 +67,7 @@ def test_cover_letter_schemas():
         "time_created": datetime.now()
     }
     cover_letter_response = CoverLetterResponse(**cover_letter_response_data)
-    print(f"CoverLetterResponse validated: {cover_letter_response.dict()}")
+    print(f"CoverLetterResponse validated: {cover_letter_response.model_dump()}")
 
 if __name__ == "__main__":
     print("Testing User Schemas...")

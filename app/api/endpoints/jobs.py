@@ -32,7 +32,7 @@ def create_job(job: JobCreate, db: Session = Depends(get_db)):
     # Add new job to the database
     db.add(new_job)
     db.commit()
-    db.refresh(new_job)
+    db.refresh(new_job) # Refresh the new job to get the generated ID
 
     return new_job
 
