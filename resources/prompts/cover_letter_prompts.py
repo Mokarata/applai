@@ -1,0 +1,4 @@
+GENERATE_COVER_LETTER_PROMPT = """
+    
+"""
+

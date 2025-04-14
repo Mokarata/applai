@@ -11,9 +11,13 @@ class JobBase(BaseModel):
     location: str
     
 # Create schemas: add fields required for creation 
-class JobCreate(JobBase):
+class JobCreate(BaseModel):
     """ Schema for creating a new job."""
+    description: str
     user_id: int
+    title: Optional[str] = None
+    company: Optional[str] = None
+    location: Optional[str] = None
 
 # Response schemas: add fields required for response
 class JobResponse(JobBase):
