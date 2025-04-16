@@ -34,30 +34,20 @@ def create_cover_letter(
             detail="Job not found"
         )
     
-    # If cover letter text is not provided, generate it using LLM
-    cover_letter_text = cover_letter.cover_letter_text
-    if not cover_letter_text:
-        # Check if user has a CV
-        if not user.cv_text:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="User data must be provided to generate a cover letter"
-            )
+    # Format user profile for LLM
+    user_profile = f"""
+    Name: {user.name} {user.surname}
+    Email: {user.email}
+    CV: {user.cv_text}
+    """
 
-        # Format user profile for LLM
-        user_profile = f"""
-        Name: {user.name} {user.surname}
-        Email: {user.email}
-        CV: {user.cv_text}
-        """
-
-        # Generate cover letter using LLM
-        gemini_service = GeminiService()
-        cover_letter_text = gemini_service.generate_cover_letter(
-            job_data=job.job_data,
-            user_profile=user_profile,
-            output_format="text",
-        )
+    # Generate cover letter using LLM
+    gemini_service = GeminiService()
+    cover_letter_text = gemini_service.generate_cover_letter(
+        job_data=job.job_data,
+        user_profile=user_profile,
+        output_format="text",
+    )
 
     # Create new cover letter
     new_cover_letter = CoverLetter(
