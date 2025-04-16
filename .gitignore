@@ -1,9 +1,40 @@
+# 1. Environment & Secrets
 .env
-Info.md
+.env.example
+
+# 2. Database files
+app.db
+*.sqlite3
+
+# 3. Python cache & build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.coverage
+.coverage.*
+
+# 4. Virtual environments
 /venv
 /.venv
-__pycache__
-*.pyc
+
+# 5. Logs & OS files
 *.log
 .DS_Store
+
+# 6. IDE/editor config
+.vscode/
+.idea/
+*.swp
+
+# 7. Custom/project-specific
 .windsurfrules
+Info.md
+
+# 8. Ignore test/migration artifacts (if any appear in future)
+*.bak
+*.tmp
+
+# 9. Ignore resources/private data (optional, if you add user data)
+# resources/**/private*
