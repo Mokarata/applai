@@ -7,7 +7,12 @@ from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 import json
-from resources.prompts import JOB_EXTRACTION_SYSTEM, JOB_EXTRACTION_USER
+from resources.prompts import (
+    JOB_EXTRACTION_SYSTEM,
+    JOB_EXTRACTION_USER,
+    COVER_LETTER_SYSTEM,
+    COVER_LETTER_USER
+)
 
 load_dotenv()
 
@@ -24,10 +29,10 @@ class GeminiService:
             convert_system_message_to_human=True
         )
 
-    def extract_job_data(self, job_description: str) -> Dict[str, Any]:
+    def extract_job_data(self, job_data: str) -> Dict[str, Any]:
         """ 
-            Extract job data from raw job description using Gemini.
-            Args: job_description (str): Raw job description text.
+            Extract job data from raw job data using Gemini.
+            Args: job_data (str): Raw job data text.
             Returns: Dict[str, Any]: Extracted job data.
         """
         
@@ -41,8 +46,8 @@ class GeminiService:
             user_message_prompt
         ])
         
-        # Format the prompt with job description
-        formatted_messages = chat_prompt.format_messages(job_description=job_description)
+        # Format the prompt with job data
+        formatted_messages = chat_prompt.format_messages(job_data=job_data)
         print(f"Formatted messages: {formatted_messages}")
         
         try:
@@ -92,3 +97,54 @@ class GeminiService:
                 "company": "Tech Company",
                 "location": "Remote"
             }
+
+    def generate_cover_letter(self, job_data: str,
+                             user_profile: str,
+                             output_format: str,
+                             example: str = "") -> str:
+        """
+        Generate a cover letter based on the provided job data and user profile.
+        Args:
+            job_data (str): raw job data from job posting
+            user_profile (str): CV data from user
+            output_format (str): desired output format
+            example (str): example output format
+        Returns:
+            str: generated cover letter
+        """
+        
+        # Create structured prompt with system and user messages
+        system_message_prompt = SystemMessagePromptTemplate.from_template(COVER_LETTER_SYSTEM)
+        user_message_prompt = HumanMessagePromptTemplate.from_template(COVER_LETTER_USER)
+
+        # Combine into a chat prompt template
+        chat_prompt = ChatPromptTemplate.from_messages([
+            system_message_prompt,
+            user_message_prompt
+        ])
+
+        # Format the prompt with job and user data
+        formatted_messages = chat_prompt.format_messages(
+            job_details=job_data,
+            user_profile=user_profile,
+            output_format=output_format,
+            example=example
+        )
+
+        try:
+            # Get response from LLM
+            response = self.llm.invoke(formatted_messages)
+
+            # Extract text from response
+            cover_letter_text = response.content
+
+            # Clean the response if needed
+            if "```" in cover_letter_text:
+                cover_letter_text = cover_letter_text.split("```")[1].strip()
+
+            return cover_letter_text
+        
+        except Exception as e:
+            # Handle errors gracefully
+            print(f"Error generating cover letter: {str(e)}")
+            return "An error occurred while generating the cover letter."

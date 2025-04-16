@@ -28,7 +28,7 @@ def test_job_schemas():
     # Test JobBase
     job_data = {
         "title": "Software Developer",
-        "description": "Python developer position",
+        "job_data": "Raw job offer data",
         "company": "Tech Corp",
         "location": "Remote"
     }

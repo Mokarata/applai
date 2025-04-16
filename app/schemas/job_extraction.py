@@ -4,7 +4,7 @@ from typing import Optional
 
 class JobExtractionRequest(BaseModel):
     """ Schema for job extraction request."""
-    description: str
+    job_data: str
     user_id: int
 
 
@@ -13,5 +13,5 @@ class JobExtractionResponse(BaseModel):
     title: str
     company: str
     location: str
-    description: str
+    job_data: str
     user_id: int

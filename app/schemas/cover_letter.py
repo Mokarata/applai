@@ -10,7 +10,7 @@ class CoverLetterBase(BaseModel):
 
 class CoverLetterCreate(CoverLetterBase):
     """ Schema for creating a new cover letter."""
-    pass
+    cover_letter_text: Optional[str] = None
 
 class CoverLetterResponse(CoverLetterBase):
     """ Schema for cover letter response, include IDs and creation time."""

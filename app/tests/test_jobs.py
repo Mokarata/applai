@@ -6,7 +6,7 @@ def test_create_job(client, test_user):
     # Prepare job data with the test user's ID
     job_data = {
         "title": "Test Job",
-        "description": "Test Description",
+        "job_data": "Test job raw data",
         "company": "Test Company",
         "location": "Test Location",
         "user_id": test_user.id
@@ -29,7 +29,7 @@ def test_get_job(client, test_job):
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["title"] == test_job.title
-    assert data["description"] == test_job.description
+    assert data["job_data"] == test_job.job_data
     assert data["company"] == test_job.company
     assert data["location"] == test_job.location
     assert data["user_id"] == test_job.user_id

@@ -1,3 +1,5 @@
+""" API router for all endpoints."""
+
 from fastapi import APIRouter
 from app.api.endpoints import users, jobs, cover_letters
 

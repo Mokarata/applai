@@ -11,7 +11,7 @@ import os
 load_dotenv()
 
 # Database configuration
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./cover_letter_app.db")
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
 
 # Create engine
 engine = create_engine(

@@ -23,7 +23,7 @@ class Job(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
-    description = Column(String)
+    job_data = Column(String)  # stores the full job posting as markdown or other formats
     company = Column(String)
     location = Column(String)
     user_id = Column(Integer, ForeignKey("users.id"))

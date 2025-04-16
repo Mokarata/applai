@@ -4,17 +4,20 @@ from typing import List
 
 from app.db import CoverLetter, User, Job, get_db
 from app.schemas.cover_letter import CoverLetterCreate, CoverLetterResponse
+from app.services.gemini_service import GeminiService
 
 router = APIRouter()
 
 @router.post("/", response_model=CoverLetterResponse, status_code=status.HTTP_201_CREATED)
 def create_cover_letter(
-    cover_letter: CoverLetterCreate,
-    user_id: int,
-    job_id: int,
-    db: Session = Depends(get_db)
-):
-    """ Creates a new cover letter for a specific job and user. """
+        cover_letter: CoverLetterCreate,
+        user_id: int,
+        job_id: int,
+        db: Session = Depends(get_db)
+    ):
+    """ Creates a new cover letter for a specific job and user. 
+        If cover_letter_text is not provided, generate it using LLM.
+    """
     # Verify user exists
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -31,14 +34,39 @@ def create_cover_letter(
             detail="Job not found"
         )
     
+    # If cover letter text is not provided, generate it using LLM
+    cover_letter_text = cover_letter.cover_letter_text
+    if not cover_letter_text:
+        # Check if user has a CV
+        if not user.cv_text:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User data must be provided to generate a cover letter"
+            )
+
+        # Format user profile for LLM
+        user_profile = f"""
+        Name: {user.name} {user.surname}
+        Email: {user.email}
+        CV: {user.cv_text}
+        """
+
+        # Generate cover letter using LLM
+        gemini_service = GeminiService()
+        cover_letter_text = gemini_service.generate_cover_letter(
+            job_data=job.job_data,
+            user_profile=user_profile,
+            output_format="text",
+        )
+
     # Create new cover letter
     new_cover_letter = CoverLetter(
         template_name=cover_letter.template_name,
-        cover_letter_text=cover_letter.cover_letter_text,
+        cover_letter_text=cover_letter_text,
         user_id=user_id,
         job_id=job_id
     )
-    
+
     # Add to database
     try:
         db.add(new_cover_letter)

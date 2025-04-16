@@ -11,12 +11,12 @@ unstructured text. You always return data in clean, structured JSON format.
 
 # User prompt contains the specific task and formatting instructions
 JOB_EXTRACTION_USER = """
-Extract the following information from the job description:
+Extract the following information from the job offer:
 - Job title (the specific role being advertised)
 - Company name (the organization offering the job)
 - Location (city, state, or country where the job is located)
 
-Job description: {job_description}
+Job offer: {job_data}
 
 Return ONLY a valid JSON object with this exact format:
 {{

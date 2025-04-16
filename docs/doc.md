@@ -21,7 +21,7 @@ The AI Cover Letter Generator is a FastAPI application that helps users create p
 - User management (create, retrieve, update, delete)
 - Job management (create, retrieve, update, delete)
 - Cover letter management (create, retrieve, update, delete)
-- AI-powered job data extraction (planned)
+- AI-powered job data extraction (implemented)
 - AI-powered cover letter generation (planned)
 
 ## Development Roadmap
@@ -32,9 +32,9 @@ The AI Cover Letter Generator is a FastAPI application that helps users create p
 - API endpoints
 
 ### Phase 2: AI Integration (In Progress)
-- Job data extraction
-- Cover letter generation
-- Prompt engineering
+- Job data extraction (**fully implemented**)
+- Cover letter generation (in development)
+- Prompt engineering (ongoing)
 
 ### Phase 3: User Experience
 - Authentication system
@@ -181,7 +181,7 @@ app/
 ### Job Model
 - **id**: Integer (Primary Key)
 - **title**: String
-- **description**: String
+- **job_data**: String
 - **company**: String
 - **location**: String
 - **user_id**: Integer (Foreign Key to User)
@@ -204,9 +204,11 @@ The application currently uses password hashing for user security:
 
 ## AI Integration
 
+The system uses modular prompt templates for both job extraction and cover letter generation, following best practices for separation of system and user instructions. Prompts are stored in dedicated files for maintainability and extensibility.
+
 ### Planned AI Features
 
-#### Job Data Extraction (Planned)
+#### Job Data Extraction (Fully Implemented)
 - Extract job title, company, and location from job descriptions
 - Use Google's Gemini model via LangChain
 - Return structured data in JSON format

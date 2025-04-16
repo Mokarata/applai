@@ -69,7 +69,7 @@ def test_job(db, test_user):
     """Create a test job that remains bound to the session"""
     job = Job(
         title="Test Job",
-        description="Test Description",
+        job_data="Test job raw data",
         company="Test Company",
         location="Test Location",
         user_id=test_user.id
@@ -133,7 +133,7 @@ def test_jobs(db, test_user):
     """Create multiple test jobs for the same user"""
     job1 = Job(
         title="Test Job 1",
-        description="Test Description 1",
+        job_data="Job 1 raw data",
         company="Test Company 1",
         location="Test Location 1",
         user_id=test_user.id
@@ -141,7 +141,7 @@ def test_jobs(db, test_user):
     
     job2 = Job(
         title="Test Job 2",
-        description="Test Description 2",
+        job_data="Job 2 raw data",
         company="Test Company 2",
         location="Test Location 2",
         user_id=test_user.id

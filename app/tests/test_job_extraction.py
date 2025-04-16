@@ -6,19 +6,19 @@ from pathlib import Path
 # API endpoint
 API_URL = "http://127.0.0.1:8000/api/jobs/"
 
-# Function to read job description from file
-def read_job_description(file_path):
+# Function to read job data from file
+def read_job_data(file_path):
     with open(file_path, 'r') as file:
         return file.read()
 
-# Get job description from your sample file
+# Get job data from your sample file
 job_file = Path("resources/jobs/raw/job_01.md")
-job_description = read_job_description(job_file)
+job_data = read_job_data(job_file)
 
 # Create payload: only essential fields
 payload = {
-    "description": job_description,
-    "user_id": 2
+    "job_data": job_data,
+    "user_id": 1
 }
 
 # Print payload for debugging

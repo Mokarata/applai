@@ -1,4 +1,3 @@
-
 # Software Engineer - AI/ML (f/m/x)
 
 **Company:** Alexander Thamm GmbH
