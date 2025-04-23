@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.db import CoverLetter, User, Job, get_db
-from app.schemas.cover_letter import CoverLetterCreate, CoverLetterResponse
+from app.schemas.cover_letter import CoverLetterCreate, CoverLetterResponse, CoverLetterUpdate
 from app.services.gemini_service import GeminiService
 
 router = APIRouter()
@@ -118,6 +118,35 @@ def list_cover_letters(db: Session = Depends(get_db)):
     """ Get all cover letters from the database. """
     cover_letters = db.query(CoverLetter).all()
     return cover_letters
+
+@router.put("/{cover_letter_id}", response_model=CoverLetterResponse)
+def update_cover_letter(
+    cover_letter_id: int, 
+    cover_letter_update: CoverLetterUpdate, 
+    db: Session = Depends(get_db)
+):
+    """ Update a cover letter by ID. """
+    # Verify cover letter exists
+    cover_letter = db.query(CoverLetter).filter(CoverLetter.id == cover_letter_id).first()
+    if not cover_letter:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Cover letter not found"
+        )
+    
+    # Update cover letter fields if provided in the request
+    cover_letter_data = cover_letter_update.model_dump(exclude_unset=True)
+    
+    # Update cover letter attributes
+    for key, value in cover_letter_data.items():
+        if getattr(cover_letter, key) != value: 
+            setattr(cover_letter, key, value)
+    
+    # Commit changes to database
+    db.commit()
+    db.refresh(cover_letter)
+    
+    return cover_letter
 
 @router.delete("/{cover_letter_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_cover_letter(cover_letter_id: int, db: Session = Depends(get_db)):

@@ -22,6 +22,18 @@ class JobCreate(BaseModel):
     company: Optional[str] = Field(None, description="Company name (optional)", example="Example Corp")
     location: Optional[str] = Field(None, description="Job location (optional)", example="Remote")
 
+# Update schema: for updating existing jobs
+class JobUpdate(BaseModel):
+    """ Schema for updating an existing job."""
+    title: Optional[str] = Field(None, description="Job title", example="Senior Software Engineer")
+    job_data: Optional[str] = Field(
+        None,
+        description="The job data text is the raw job offer text. Can be in markdown format.",
+        example="# Senior Software Engineer\n\n**Company:** Example Corp\n**Location:** Remote"
+    )
+    company: Optional[str] = Field(None, description="Company name", example="Example Corp")
+    location: Optional[str] = Field(None, description="Job location", example="Remote")
+
 # Response schemas: add fields required for response
 class JobResponse(JobBase):
     """ Schema for job response, include ID and status."""

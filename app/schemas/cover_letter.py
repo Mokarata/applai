@@ -12,6 +12,11 @@ class CoverLetterCreate(CoverLetterBase):
     """ Schema for creating a new cover letter."""
     cover_letter_text: Optional[str] = None
 
+class CoverLetterUpdate(BaseModel):
+    """ Schema for updating an existing cover letter."""
+    template_name: Optional[str] = None
+    cover_letter_text: Optional[str] = None
+
 class CoverLetterResponse(CoverLetterBase):
     """ Schema for cover letter response, include IDs and creation time."""
     id: int

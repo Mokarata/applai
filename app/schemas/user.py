@@ -14,6 +14,15 @@ class UserCreate(UserBase):
     """ Schema for creating a new user """
     password: str
 
+class UserUpdate(BaseModel):
+    """ Schema for updating an existing user """
+    name: Optional[str] = None
+    surname: Optional[str] = None
+    email: Optional[str] = None
+    cv_text: Optional[str] = None
+    is_active: Optional[bool] = None
+    password: Optional[str] = None
+
 class UserResponse(UserBase):
     """ Schema for user response, include ID and status."""
     id: int

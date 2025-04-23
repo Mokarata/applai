@@ -5,7 +5,7 @@ from typing import List
 
 # Import app dependencies
 from app.db import get_db, User
-from app.schemas.user import UserCreate, UserResponse
+from app.schemas.user import UserCreate, UserResponse, UserUpdate
 
 # Initialize APIRouter
 router = APIRouter()
@@ -58,6 +58,35 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
+    return user
+
+@router.put("/{user_id}", response_model=UserResponse)
+def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get_db)):
+    """ Update user by ID. """
+    # Verify user exists
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Update user fields if provided in the request
+    user_data = user_update.model_dump(exclude_unset=True)
+    
+    # Hash password if it's being updated
+    if "password" in user_data and user_data["password"]:
+        user_data["password"] = pwd_context.hash(user_data["password"])
+    
+    # Update user attributes
+    for key, value in user_data.items():
+        if getattr(user, key) != value:
+            setattr(user, key, value)
+    
+    # Commit changes to database
+    db.commit()
+    db.refresh(user)
+    
     return user
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)

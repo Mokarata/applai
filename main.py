@@ -1,4 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from pathlib import Path
 from app.api import api_router
 from app.core.logging import get_logger
 from contextlib import asynccontextmanager
@@ -16,13 +20,27 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="AI Cover Letter Generator", lifespan=lifespan)
 
+# Define base directory
+BASE_DIR = Path(__file__).resolve().parent
+
+# Mount static files
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "app" / "static")), name="static")
+
 # Include API router
 app.include_router(api_router, prefix="/api")
 
-@app.get("/")
-def read_root():
-    logger.info("Root endpoint accessed")
-    return {"message": "Welcome to AI Letter Generator API"}
+# UI route
+@app.get("/ui", response_class=HTMLResponse)
+async def read_ui(request: Request):
+    with open(BASE_DIR / "app" / "static" / "index.html") as f:
+        html_content = f.read()
+    return HTMLResponse(content=html_content)
+
+# Redirect root to UI
+@app.get("/", response_class=HTMLResponse)
+async def redirect_to_ui():
+    logger.info("Root endpoint accessed - redirecting to UI")
+    return HTMLResponse('<html><head><meta http-equiv="refresh" content="0;url=/ui"></head></html>')
 
 if __name__ == "__main__":
     import uvicorn

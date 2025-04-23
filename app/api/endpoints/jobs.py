@@ -4,7 +4,7 @@ from typing import List, Optional
 
 # Import app dependencies
 from app.db import get_db, Job, User
-from app.schemas.job import JobCreate, JobResponse
+from app.schemas.job import JobCreate, JobResponse, JobUpdate
 from app.services.gemini_service import GeminiService
 
 # Initialize APIRouter
@@ -124,6 +124,35 @@ def get_jobs(db: Session = Depends(get_db)):
     """ Get all jobs from the database. """
     jobs = db.query(Job).all()
     return jobs
+
+@router.put("/{job_id}", response_model=JobResponse)
+def update_job(job_id: int, job_update: JobUpdate, db: Session = Depends(get_db)):
+    """ Update a job by ID. """
+    # Verify job exists
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job not found"
+        )
+    
+    # Update job fields if provided in the request
+    new_job_data = job_update.model_dump(exclude_unset=True)
+    
+    # Clean job_data if it's being updated
+    if "job_data" in new_job_data and new_job_data["job_data"]:
+        new_job_data["job_data"] = clean_job_data(new_job_data["job_data"])
+    
+    # Update job attributes
+    for key, value in new_job_data.items():
+        if getattr(job, key) != value:
+            setattr(job, key, value)
+    
+    # Commit changes to database
+    db.commit()
+    db.refresh(job)
+    
+    return job
 
 @router.delete("/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_job(job_id: int, db: Session = Depends(get_db)):
