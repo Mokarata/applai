@@ -20,6 +20,7 @@ __pycache__/
 /.venv
 
 # 5. Logs & OS files
+logs/
 *.log
 .DS_Store
 

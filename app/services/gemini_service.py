@@ -13,6 +13,10 @@ from resources.prompts import (
     COVER_LETTER_SYSTEM,
     COVER_LETTER_USER
 )
+from app.core.logging import get_logger
+
+# Get a logger for this module
+logger = get_logger(__name__)
 
 load_dotenv()
 
@@ -21,6 +25,7 @@ class GeminiService:
     
     def __init__(self):
         """ initialize Gemini service with API key from environment variables"""
+        logger.info("Initializing GeminiService")
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.0-flash",
             google_api_key=os.getenv("GOOGLE_API_KEY"),
@@ -35,6 +40,7 @@ class GeminiService:
             Args: job_data (str): Raw job data text.
             Returns: Dict[str, Any]: Extracted job data.
         """
+        logger.info("Extracting job data")
         
         # Create structured prompt with system and user messages
         system_message_prompt = SystemMessagePromptTemplate.from_template(JOB_EXTRACTION_SYSTEM)
@@ -48,42 +54,47 @@ class GeminiService:
         
         # Format the prompt with job data
         formatted_messages = chat_prompt.format_messages(job_data=job_data)
-        print(f"Formatted messages: {formatted_messages}")
+        logger.debug(f"Formatted messages for job extraction")
         
         try:
             # Get response from LLM
             response = self.llm.invoke(formatted_messages)
-            print(f"LLM response: {response}")
+            logger.debug("Received response from Gemini")
             
             # Extract and parse JSON from response
             response_text = response.content
-            print(f"Raw LLM response: {response_text}")
+            logger.debug("Processing response text")
             
             # Clean the response text if needed
             if "```json" in response_text:
                 response_text = response_text.split("```json")[1].split("```")[0].strip()
+                logger.debug("Cleaned JSON code block from response")
             elif "```" in response_text:
                 response_text = response_text.split("```")[1].split("```")[0].strip()
+                logger.debug("Cleaned code block from response")
 
             # Parse JSON
             extracted_data = json.loads(response_text)
-            print(f"Parsed job data: {extracted_data}")
+            logger.debug("Successfully parsed job data JSON")
             
             # Add validation with fallbacks
             if not extracted_data.get("title"):
                 extracted_data["title"] = "Software Engineer"
+                logger.warning("Missing job title, using default: 'Software Engineer'")
             if not extracted_data.get("company"):
                 extracted_data["company"] = "Tech Company"
+                logger.warning("Missing company name, using default: 'Tech Company'")
             if not extracted_data.get("location"):
                 extracted_data["location"] = "Remote"
+                logger.warning("Missing location, using default: 'Remote'")
             
-            print(f"Extracted job data: {extracted_data}")
+            logger.info(f"Successfully extracted job data for {extracted_data.get('title')} at {extracted_data.get('company')}")
             return extracted_data
             
         except json.JSONDecodeError as e:
             # Handle JSON parsing errors
-            print(f"JSON decode error: {str(e)}")
-            print(f"Response text: {response_text}")
+            logger.error(f"JSON decode error: {str(e)}")
+            logger.error("Failed to parse response text")
             return {
                 "title": "Software Engineer",
                 "company": "Tech Company",
@@ -91,7 +102,7 @@ class GeminiService:
             }
         except Exception as e:
             # Handle errors gracefully
-            print(f"Error extracting job data: {str(e)}")
+            logger.error(f"Error extracting job data: {str(e)}", exc_info=True)
             return {
                 "title": "Software Engineer",
                 "company": "Tech Company",
@@ -110,6 +121,7 @@ class GeminiService:
         Returns:
             str: generated cover letter
         """
+        logger.info("Generating cover letter")
         
         # Create structured prompt with system and user messages
         system_message_prompt = SystemMessagePromptTemplate.from_template(COVER_LETTER_SYSTEM)
@@ -127,21 +139,26 @@ class GeminiService:
             user_profile=user_profile,
             output_format=output_format
         )
+        logger.debug("Formatted cover letter prompt")
 
         try:
             # Get response from LLM
+            logger.debug("Sending request to Gemini")
             response = self.llm.invoke(formatted_messages)
 
             # Extract text from response
             cover_letter_text = response.content
+            logger.debug("Received response from Gemini")
 
             # Clean the response if needed
             if "```" in cover_letter_text:
                 cover_letter_text = cover_letter_text.split("```")[1].strip()
+                logger.debug("Cleaned code blocks from response")
 
+            logger.info("Successfully generated cover letter")
             return cover_letter_text
         
         except Exception as e:
             # Handle errors gracefully
-            print(f"Error generating cover letter: {str(e)}")
+            logger.error(f"Error generating cover letter: {str(e)}", exc_info=True)
             return "An error occurred while generating the cover letter."
