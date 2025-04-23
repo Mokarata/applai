@@ -9,6 +9,7 @@
 - [x] Add dependency injection for database
 - [x] Set up testing framework
 - [x] Add code quality tools (pylint, prettier)
+- [ ] Add python-multipart to requirements.txt
 
 ## 2. Core API Implementation
 
@@ -18,6 +19,8 @@
 - [x] Authentication system
 - [x] Input validation
 - [x] Error handling
+- [ ] Set up Python logging and FastAPI exception handlers; replace print statements with logger
+- [ ] Implement FastAPI dependency injection for services (get_gemini_service)
 
 ## 3. Testing & Quality Assurance
 
@@ -26,6 +29,7 @@
 - [x] Test fixtures and helpers
 - [x] Comprehensive test coverage
 - [ ] Performance testing
+- [ ] Refactor tests to use FastAPI TestClient and pytest; add httpx dependency; use fixtures for test DB and service mocks
 
 ## 4. Research & Planning
 
@@ -104,6 +108,8 @@
 - [ ] Implement secure API key handling
 - [ ] Add rate limiting protection
 - [ ] Configure deployment settings
+- [ ] Set up Alembic migrations and remove create_all and /recreate-tables endpoint
+- [ ] Implement Pydantic BaseSettings for centralized configuration management (app/core/config.py)
 
 ## 11. Documentation & Deployment
 
