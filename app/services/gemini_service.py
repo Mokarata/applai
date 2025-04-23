@@ -100,15 +100,13 @@ class GeminiService:
 
     def generate_cover_letter(self, job_data: str,
                              user_profile: str,
-                             output_format: str,
-                             example: str = "") -> str:
+                             output_format: str) -> str:
         """
         Generate a cover letter based on the provided job data and user profile.
         Args:
             job_data (str): raw job data from job posting
             user_profile (str): CV data from user
             output_format (str): desired output format
-            example (str): example output format
         Returns:
             str: generated cover letter
         """
@@ -127,8 +125,7 @@ class GeminiService:
         formatted_messages = chat_prompt.format_messages(
             job_details=job_data,
             user_profile=user_profile,
-            output_format=output_format,
-            example=example
+            output_format=output_format
         )
 
         try:
