@@ -90,6 +90,68 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   };
   
+  // Cover Letter API methods
+  const coverLettersApi = {
+    // Generate a cover letter
+    generateCoverLetter: async function(userId, jobId, templateName = 'standard') {
+      try {
+        const response = await fetch(`${API_BASE_URL}/cover-letters/?user_id=${userId}&job_id=${jobId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            template_name: templateName,
+            cover_letter_text: null  // Let the backend generate this
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        return await response.json(); // Return the created cover letter
+      } catch (error) {
+        console.error('Error generating cover letter:', error);
+        throw error;
+      }
+    },
+    
+    // Get a cover letter by ID
+    getCoverLetter: async function(coverLetterId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/cover_letters/${coverLetterId}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error(`Error fetching cover letter ${coverLetterId}:`, error);
+        throw error;
+      }
+    },
+    
+    // Delete a cover letter
+    deleteCoverLetter: async function(coverLetterId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/cover_letters/${coverLetterId}`, {
+          method: 'DELETE',
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        return true; // Successful deletion
+      } catch (error) {
+        console.error(`Error deleting cover letter ${coverLetterId}:`, error);
+        throw error;
+      }
+    }
+  };
+  
   // User API methods
   const userApi = {
     // Get user profile
@@ -154,6 +216,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const sourcePanels = document.querySelectorAll('.source-panel');
   const emptyJobsState = document.getElementById('empty-jobs-state');
   const emptySavedState = document.getElementById('empty-saved-state');
+  const generateCoverLetterBtn = document.getElementById('generate-cover-letter-btn');
+  const customizeLetterBtn = document.getElementById('customize-letter-btn');
+  const highlightSkillsBtn = document.getElementById('highlight-skills-btn');
+  const formalToneBtn = document.getElementById('formal-tone-btn');
+  const suggestedPrompts = document.querySelectorAll('.suggested-prompt');
   
   // State
   let userProfile = {
@@ -365,7 +432,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Generate a sample cover letter - in real app this would call the API
-  function generateCoverLetter() {
+  async function generateCoverLetter() {
     // Show typing indicator
     const loadingMessage = "Generating your cover letter...";
     const loadingEl = document.createElement('div');
@@ -373,46 +440,33 @@ document.addEventListener('DOMContentLoaded', function() {
     loadingEl.textContent = loadingMessage;
     chatMessages.appendChild(loadingEl);
     
-    setTimeout(() => {
+    try {
+      // Get selected jobs
+      const selectedJobs = jobs.filter(job => job.selected);
+      
+      // Call API to generate cover letter
+      const response = await coverLettersApi.generateCoverLetter(userProfile.id, selectedJobs[0].id);
+      
       // Replace loading message with generated letter
       chatMessages.removeChild(loadingEl);
       
-      // Sample cover letter template - in real implementation, this would come from the API
-      const selectedJob = jobs.find(job => job.selected);
-      if (!selectedJob) {
-        addBotMessage("Please select a job from the Jobs panel first.");
-        return;
-      }
+      // Add the letter to chat
+      addBotMessage(`Here's your generated cover letter for ${selectedJobs[0].company}:`);
+      addBotMessage(response.cover_letter_text);
       
-      const letterText = `
-Dear Hiring Manager,
-
-I am writing to express my interest in the ${selectedJob.title} position. With my background in software development and experience with modern technologies, I believe I am well-suited for this role.
-
-The opportunity to join ${selectedJob.company} excites me because of your innovative approach to technology and commitment to excellence. My experience developing scalable applications and leading technical initiatives aligns perfectly with what you're looking for.
-
-In my previous role, I successfully:
-- Led the redesign of a core product that improved user engagement by 35%
-- Implemented CI/CD pipelines that reduced deployment time by 50%
-- Mentored junior developers and improved team productivity
-
-I am particularly drawn to your focus on [specific company value or project mentioned in job posting] and am eager to contribute my skills in this area.
-
-Thank you for considering my application. I look forward to the opportunity to discuss how my experience and skills would benefit ${selectedJob.company}.
-
-Sincerely,
-${userProfile.fullName || '[Your Name]'}
-      `;
-      
+      // Make current letter active
       currentLetter = {
-        text: letterText,
-        job: selectedJob,
+        text: response.cover_letter_text,
+        job: selectedJobs[0],
         date: new Date()
       };
       
-      addBotMessage(letterText);
       saveLetterBtn.disabled = false;
-    }, 2000);
+    } catch (error) {
+      // Replace loading message with error
+      chatMessages.removeChild(loadingEl);
+      addBotMessage(`Error generating cover letter: ${error.message}`);
+    }
   }
   
   // Save letter functionality
@@ -431,18 +485,35 @@ ${userProfile.fullName || '[Your Name]'}
       const button = e.target.closest('.select-job');
       const jobId = parseInt(button.getAttribute('data-job-id'));
       
-      // Toggle selection
+      // Find the job being clicked
       const job = jobs.find(j => j.id === jobId);
       if (job) {
-        job.selected = !job.selected;
+        // If job is already selected, do nothing (prevent deselection)
+        if (job.selected) {
+          return;
+        }
+        
+        // Deselect all jobs first
+        jobs.forEach(j => {
+          if (j.selected) {
+            j.selected = false;
+            // Find and update the corresponding button icon
+            const jobButton = document.querySelector(`.select-job[data-job-id="${j.id}"]`);
+            if (jobButton) {
+              const jobIcon = jobButton.querySelector('i');
+              if (jobIcon) {
+                jobIcon.textContent = 'check_box_outline_blank';
+              }
+            }
+          }
+        });
+        
+        // Select the clicked job
+        job.selected = true;
         
         // Update icon
         const icon = button.querySelector('i');
-        if (job.selected) {
-          icon.textContent = 'check_box';
-        } else {
-          icon.textContent = 'check_box_outline_blank';
-        }
+        icon.textContent = 'check_box';
         
         // Update selected count
         updateSelectedJobsCount();
@@ -845,4 +916,71 @@ ${userProfile.fullName || '[Your Name]'}
   
   // Initialize the app
   initializeApp();
+  
+  // Quick Options functionality
+  if (generateCoverLetterBtn) {
+    generateCoverLetterBtn.addEventListener('click', () => {
+      // Check if any jobs are selected
+      const selectedJobs = jobs.filter(job => job.selected);
+      if (selectedJobs.length === 0) {
+        alert('Please select at least one job posting first.');
+        return;
+      }
+      
+      // Add a user message indicating the request
+      addUserMessage('Generate a cover letter for the selected job');
+      
+      // Generate the cover letter
+      generateCoverLetter();
+    });
+  }
+  
+  if (customizeLetterBtn) {
+    customizeLetterBtn.addEventListener('click', () => {
+      if (!currentLetter) {
+        alert('Please generate a cover letter first.');
+        return;
+      }
+      
+      addUserMessage('Customize this letter to highlight my experience');
+      simulateBotResponse('Customize this letter to highlight my experience');
+    });
+  }
+  
+  if (highlightSkillsBtn) {
+    highlightSkillsBtn.addEventListener('click', () => {
+      if (!currentLetter) {
+        alert('Please generate a cover letter first.');
+        return;
+      }
+      
+      addUserMessage('Highlight my technical skills more prominently');
+      simulateBotResponse('Highlight my technical skills more prominently');
+    });
+  }
+  
+  if (formalToneBtn) {
+    formalToneBtn.addEventListener('click', () => {
+      if (!currentLetter) {
+        alert('Please generate a cover letter first.');
+        return;
+      }
+      
+      addUserMessage('Make the tone more formal and professional');
+      simulateBotResponse('Make the tone more formal and professional');
+    });
+  }
+  
+  // Suggested prompts functionality
+  suggestedPrompts.forEach(prompt => {
+    prompt.addEventListener('click', () => {
+      const promptText = prompt.getAttribute('data-prompt');
+      
+      // Set the prompt text in the input field
+      chatInput.value = promptText;
+      
+      // Focus the input field
+      chatInput.focus();
+    });
+  });
 });

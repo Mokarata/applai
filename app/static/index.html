@@ -80,11 +80,47 @@
             </div>
 
             <div class="chat-controls">
+              <!-- Quick Options Section - Similar to NotebookLM -->
+              <div class="quick-options">
+                <h4 class="quick-options-title">Quick Options</h4>
+                <div class="quick-options-buttons">
+                  <button class="quick-option-btn" id="generate-cover-letter-btn">
+                    <i class="material-icons">description</i>
+                    Generate Cover Letter
+                  </button>
+                  <button class="quick-option-btn" id="customize-letter-btn">
+                    <i class="material-icons">edit</i>
+                    Customize Letter
+                  </button>
+                  <button class="quick-option-btn" id="highlight-skills-btn">
+                    <i class="material-icons">star</i>
+                    Highlight Skills
+                  </button>
+                  <button class="quick-option-btn" id="formal-tone-btn">
+                    <i class="material-icons">business</i>
+                    Formal Tone
+                  </button>
+                </div>
+              </div>
+              
               <div class="chat-input-container">
                 <textarea class="chat-input" id="chat-input" placeholder="Type a message or click Generate to create a cover letter..."></textarea>
                 <button class="chat-button" id="send-message-btn">
                   <i class="material-icons">send</i>
                 </button>
+              </div>
+              
+              <!-- Suggested Prompts - Similar to NotebookLM -->
+              <div class="suggested-prompts">
+                <div class="suggested-prompt" data-prompt="Can you make my cover letter more concise?">
+                  Make my letter more concise
+                </div>
+                <div class="suggested-prompt" data-prompt="Can you highlight my technical skills more prominently?">
+                  Highlight technical skills
+                </div>
+                <div class="suggested-prompt" data-prompt="Can you adjust the tone to be more conversational?">
+                  More conversational tone
+                </div>
               </div>
               
               <div class="chat-options">
