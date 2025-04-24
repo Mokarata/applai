@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, File, Form, UploadFile
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+import re
 
 # Import app dependencies
 from app.db import get_db, Job, User
@@ -26,6 +27,54 @@ def clean_job_data(data):
     # but preserve newlines, tabs, and carriage returns
     return ''.join(char for char in data if ord(char) >= 32 or char in '\n\r\t')
 
+def preserve_markdown_structure(markdown_text: str) -> str:
+    """
+    Preserves the structure of markdown text when storing in the database.
+    Ensures that headers, lists, and other markdown elements are properly maintained.
+    
+    Args:
+        markdown_text (str): Raw markdown text
+        
+    Returns:
+        str: Cleaned markdown text with structure preserved
+    """
+    if not markdown_text:
+        return ""
+    
+    # Normalize line endings
+    text = markdown_text.replace('\r\n', '\n').replace('\r', '\n')
+    
+    # Ensure headers have proper spacing
+    text = re.sub(r'(^|\n)(#{1,6})([^ #])', r'\1\2 \3', text)
+    
+    # Ensure lists have proper spacing
+    text = re.sub(r'(^|\n)([*+-])([^ ])', r'\1\2 \3', text)
+    text = re.sub(r'(^|\n)(\d+\.)([^ ])', r'\1\2 \3', text)
+    
+    # Preserve paragraph breaks (double newlines)
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    
+    return text
+
+def process_job_data(data: str) -> str:
+    """
+    Process job data to ensure it's properly formatted as markdown.
+    This function cleans the data and preserves markdown structure.
+    
+    Args:
+        data (str): Raw job data text from various sources
+        
+    Returns:
+        str: Processed job data with preserved markdown structure
+    """
+    # First clean the data to remove problematic characters
+    cleaned_data = clean_job_data(data)
+    
+    # Then preserve markdown structure
+    markdown_data = preserve_markdown_structure(cleaned_data)
+    
+    return markdown_data
+
 @router.post("/", response_model=JobResponse, status_code=status.HTTP_201_CREATED)
 def create_job(job: JobCreate, db: Session = Depends(get_db)):
     """ Create a new job."""
@@ -36,15 +85,15 @@ def create_job(job: JobCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         ) 
-    # Clean job_data to handle various input formats
-    job_data_cleaned = clean_job_data(job.job_data)
+    # Process job data to ensure it's properly formatted as markdown
+    job_data_processed = process_job_data(job.job_data)
     
     # Extract job data if title, company or location are not provided
     if not job.title or not job.company or not job.location:
         try:
             # Use Gemini to extract job data
             gemini_service = GeminiService()
-            extracted_data = gemini_service.extract_job_data(job_data_cleaned)
+            extracted_data = gemini_service.extract_job_data(job_data_processed)
             
             # Use extracted data or defaults
             job_title = job.title or extracted_data.get("title", "Untitled Position")
@@ -65,7 +114,7 @@ def create_job(job: JobCreate, db: Session = Depends(get_db)):
     # Create new job
     new_job = Job(
         title=job_title,
-        job_data=job_data_cleaned,
+        job_data=job_data_processed,
         company=job_company,
         location=job_location,
         user_id=job.user_id
@@ -96,9 +145,12 @@ async def create_job_from_file(
     job_data = await file.read()
     job_data = job_data.decode("utf-8")
     
+    # Process job data to ensure it's properly formatted as markdown
+    job_data_processed = process_job_data(job_data)
+    
     # Create JobCreate object
     job = JobCreate(
-        job_data=job_data,
+        job_data=job_data_processed,
         user_id=user_id,
         title=title,
         company=company,
@@ -139,9 +191,9 @@ def update_job(job_id: int, job_update: JobUpdate, db: Session = Depends(get_db)
     # Update job fields if provided in the request
     new_job_data = job_update.model_dump(exclude_unset=True)
     
-    # Clean job_data if it's being updated
+    # Process job data to ensure it's properly formatted as markdown
     if "job_data" in new_job_data and new_job_data["job_data"]:
-        new_job_data["job_data"] = clean_job_data(new_job_data["job_data"])
+        new_job_data["job_data"] = process_job_data(new_job_data["job_data"])
     
     # Update job attributes
     for key, value in new_job_data.items():

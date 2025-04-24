@@ -866,52 +866,139 @@ document.addEventListener('DOMContentLoaded', function() {
   // App initialization function - loads data from API
   async function initializeApp() {
     try {
-      // Try to load user profile
-      await loadUserProfile();
-      
-      // Fetch jobs from API
-      console.log('Fetching jobs from API...');
-      const apiJobs = await jobsApi.getAllJobs();
-      
-      // If we got jobs from the API, use them
-      if (apiJobs && apiJobs.length > 0) {
-        console.log('Successfully loaded', apiJobs.length, 'jobs from API');
+      // Load user profile
+      const userProfileData = await userApi.getUserProfile(1); // Default user ID
+      if (userProfileData) {
+        userProfile = {
+          id: userProfileData.id,
+          fullName: `${userProfileData.name} ${userProfileData.surname}`,
+          email: userProfileData.email,
+          phone: userProfileData.phone || '',
+          resume: userProfileData.cv_text || ''
+        };
         
-        // Process jobs to ensure they have the selected property
-        jobs = apiJobs.map(job => ({
-          ...job,
-          selected: false, // Default to not selected
-          // Handle potential property differences between API and UI
-          description: job.job_data || job.description || 'No description available'
-        }));
-      } else {
-        console.log('No jobs returned from API, using sample job');
-        // Use a sample job if API returns empty
-        jobs = [{
-          id: 0,
-          title: 'Sample Job',
-          company: 'Example Company',
-          description: 'This is a sample job posting. Add real jobs using the + button.',
-          selected: false
-        }];
+        // Update profile form with user data
+        updateProfileForm();
       }
       
-      // Update UI with jobs (either from API or sample)
+      // Load jobs
+      const jobsData = await jobsApi.getAllJobs();
+      jobs = jobsData.map(job => ({
+        ...job,
+        selected: false
+      }));
+      
+      // Update UI
       updateJobsList();
-      updateSelectedJobsCount();
+      
     } catch (error) {
       console.error('Error initializing app:', error);
-      // Keep using default sample job if API fails
-      jobs = [{
-        id: 0,
-        title: 'Sample Job',
-        company: 'Example Company',
-        description: 'This is a sample job posting. Add real jobs using the + button.',
-        selected: false
-      }];
-      updateJobsList();
-      updateSelectedJobsCount();
     }
+  }
+  
+  // Update profile form with current user data
+  function updateProfileForm() {
+    // Get form elements
+    const fullNameInput = document.getElementById('full-name');
+    const emailInput = document.getElementById('email');
+    const phoneInput = document.getElementById('phone');
+    const resumeTextarea = document.getElementById('resume-text');
+    
+    // Set values
+    if (fullNameInput) fullNameInput.value = userProfile.fullName;
+    if (emailInput) emailInput.value = userProfile.email;
+    if (phoneInput) phoneInput.value = userProfile.phone;
+    if (resumeTextarea) resumeTextarea.value = userProfile.resume;
+  }
+  
+  // Profile modal functionality
+  if (profileBtn) {
+    profileBtn.addEventListener('click', () => {
+      // Update form with latest user data
+      updateProfileForm();
+      
+      // Show modal
+      profileModal.classList.add('active');
+    });
+  }
+  
+  if (closeProfileBtn) {
+    closeProfileBtn.addEventListener('click', () => {
+      profileModal.classList.remove('active');
+    });
+  }
+  
+  // Resume file upload handling
+  if (resumeFile) {
+    resumeFile.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        const file = e.target.files[0];
+        resumeFileName.textContent = file.name;
+        resumeFileName.style.display = 'block';
+        
+        // For text-based files, we can read and display the content
+        if (file.type === 'text/plain' || file.name.endsWith('.md')) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            document.getElementById('resume-text').value = e.target.result;
+          };
+          reader.readAsText(file);
+        }
+      }
+    });
+  }
+  
+  // Save profile functionality
+  if (saveProfileBtn) {
+    saveProfileBtn.addEventListener('click', async () => {
+      try {
+        // Get form values
+        const fullName = document.getElementById('full-name').value;
+        const email = document.getElementById('email').value;
+        const phone = document.getElementById('phone').value;
+        const resumeText = document.getElementById('resume-text').value;
+        
+        // Basic validation
+        if (!fullName || !email) {
+          alert('Please fill out required fields (name and email)');
+          return;
+        }
+        
+        // Split full name into first and last name
+        const nameParts = fullName.split(' ');
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(' ');
+        
+        // Prepare data for API
+        const userData = {
+          name: firstName,
+          surname: lastName,
+          email: email,
+          phone: phone,
+          cv_text: resumeText
+        };
+        
+        // Update user profile via API
+        const updatedUser = await userApi.updateUserProfile(userProfile.id, userData);
+        
+        // Update local state
+        userProfile = {
+          id: updatedUser.id,
+          fullName: `${updatedUser.name} ${updatedUser.surname}`,
+          email: updatedUser.email,
+          phone: updatedUser.phone || '',
+          resume: updatedUser.cv_text || ''
+        };
+        
+        // Close modal and show success message
+        profileModal.classList.remove('active');
+        alert('Profile updated successfully!');
+        
+      } catch (error) {
+        console.error('Error saving profile:', error);
+        alert(`Error saving profile: ${error.message}`);
+      }
+    });
   }
   
   // Initialize the app
