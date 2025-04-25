@@ -53,7 +53,15 @@
   --spacing-xs: 8px;
   --border-radius-pill: 16px;
   --accent-green-hover: #3bb869;
+
+  /* --------------------------------------------------------------------
+     RESPONSIVE BREAKPOINTS
+     ------------------------------------------------------------------ */
+  --breakpoint-mobile: 480px;       /* Small mobile devices */
+  --breakpoint-tablet: 768px;       /* Tablets and up */
+  --breakpoint-desktop: 1024px;     /* Desktop and up */
 }
+
 
 /* ======================================================================
    2. CSS RESET / NORMALIZE
@@ -729,7 +737,7 @@ textarea.form-control {
 .text-red { color: var(--accent-red); }
 
 /* Responsive adjustments */
-@media (max-width: 768px) {
+@media (max-width: var(--breakpoint-tablet)) {
   .panel.collapsed {
     flex: 0;
     min-width: 0;
