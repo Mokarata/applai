@@ -14,6 +14,8 @@ from resources.prompts import (
     COVER_LETTER_USER
 )
 from app.core.logging import get_logger
+from app.schemas.cover_letter import CoverLetterSections
+from datetime import date
 
 # Get a logger for this module
 logger = get_logger(__name__)
@@ -109,21 +111,20 @@ class GeminiService:
                 "location": "Remote"
             }
 
-    def generate_cover_letter(self, job_data: str,
-                             user_profile: str,
-                             output_format: str) -> str:
+    async def generate_cover_letter(self, job_details: dict, user_profile: dict, template_name: str = "standard") -> CoverLetterSections:
         """
-        Generate a cover letter based on the provided job data and user profile.
-        Args:
-            job_data (str): raw job data from job posting
-            user_profile (str): CV data from user
-            output_format (str): desired output format
-        Returns:
-            str: generated cover letter
+        Generates a cover letter using the Gemini API based on job details and user profile.
+        Uses system/user prompts and returns a structured CoverLetterSections object.
         """
-        logger.info("Generating cover letter")
-        
-        # Create structured prompt with system and user messages
+        logger.info(f"Generating cover letter for job: {job_details.get('title', 'N/A')} at {job_details.get('company', 'N/A')}, template: {template_name}")
+        logger.debug(f"User profile keys: {list(user_profile.keys())}")
+
+        # Ensure prompts are loaded correctly
+        if not COVER_LETTER_SYSTEM or not COVER_LETTER_USER:
+            logger.error("System or User prompt constants not loaded!")
+            raise ValueError("Cover letter prompts are not configured.")
+            
+        # Create prompt templates from constants
         system_message_prompt = SystemMessagePromptTemplate.from_template(COVER_LETTER_SYSTEM)
         user_message_prompt = HumanMessagePromptTemplate.from_template(COVER_LETTER_USER)
 
@@ -133,32 +134,60 @@ class GeminiService:
             user_message_prompt
         ])
 
-        # Format the prompt with job and user data
-        formatted_messages = chat_prompt.format_messages(
-            job_details=job_data,
-            user_profile=user_profile,
-            output_format=output_format
-        )
-        logger.debug("Formatted cover letter prompt")
+        current_date_str = date.today().isoformat()
 
+        # Format the prompt with necessary data
+        # Using json.dumps ensures dicts are passed as readable strings in the prompt
         try:
-            # Get response from LLM
-            logger.debug("Sending request to Gemini")
+            formatted_messages = chat_prompt.format_messages(
+                job_details=json.dumps(job_details, indent=2),
+                user_profile=json.dumps(user_profile, indent=2),
+                template_name=template_name,
+                current_date=current_date_str
+            )
+            logger.debug("Formatted cover letter prompt using system/user templates.")
+        except Exception as format_err:
+            logger.error(f"Error formatting prompt messages: {format_err}", exc_info=True)
+            raise Exception("Internal error formatting generation request.")
+
+        # Invoke the LLM
+        try:
+            logger.debug("Sending request to Gemini via LangChain invoke.")
             response = self.llm.invoke(formatted_messages)
+            raw_text = response.content.strip() # Get raw text output
+            logger.debug(f"Received raw response from Gemini (first 200 chars): {raw_text[:200]}...")
 
-            # Extract text from response
-            cover_letter_text = response.content
-            logger.debug("Received response from Gemini")
+            # Attempt to parse the raw text as JSON
+            try:
+                # Handle potential markdown code blocks
+                if raw_text.startswith("```json"):
+                    raw_text = raw_text[7:]
+                if raw_text.endswith("```"):
+                    raw_text = raw_text[:-3]
+                
+                # Trim potential leading/trailing whitespace again after stripping code fences
+                raw_text = raw_text.strip()
+                
+                parsed_json = json.loads(raw_text)
+                logger.debug("Successfully parsed JSON from response.")
 
-            # Clean the response if needed
-            if "```" in cover_letter_text:
-                cover_letter_text = cover_letter_text.split("```")[1].strip()
-                logger.debug("Cleaned code blocks from response")
+            except json.JSONDecodeError as json_err:
+                logger.error(f"Failed to decode JSON response: {json_err}", exc_info=True)
+                logger.error(f"Raw response content that failed parsing was: {raw_text}")
+                raise Exception("AI response was not valid JSON.")
 
-            logger.info("Successfully generated cover letter")
-            return cover_letter_text
-        
+            # Validate the parsed JSON against the Pydantic schema
+            try:
+                cover_letter_sections = CoverLetterSections(**parsed_json)
+                logger.info("Successfully validated JSON against CoverLetterSections schema.")
+                return cover_letter_sections # Return the validated Pydantic object
+            
+            except Exception as validation_err: # Catch Pydantic validation errors more broadly
+                logger.error(f"Failed to validate parsed JSON against schema: {validation_err}", exc_info=True)
+                logger.error(f"Parsed JSON data that failed validation was: {parsed_json}")
+                raise Exception("AI response structure did not match expected format.")
+
         except Exception as e:
-            # Handle errors gracefully
-            logger.error(f"Error generating cover letter: {str(e)}", exc_info=True)
-            return "An error occurred while generating the cover letter."
+            # Catch errors during LLM invocation or other unexpected issues
+            logger.error(f"Error during cover letter generation or processing: {str(e)}", exc_info=True)
+            raise Exception(f"An unexpected error occurred during cover letter generation: {str(e)}")

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, JSON
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from .database import Base
@@ -37,7 +37,7 @@ class CoverLetter(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     template_name = Column(String, index=True)
-    cover_letter_text = Column(String)
+    sections = Column(JSON, nullable=True)
     time_created = Column(DateTime(timezone=True), server_default=func.now())
     user_id = Column(Integer, ForeignKey("users.id"))
     job_id = Column(Integer, ForeignKey("jobs.id"))

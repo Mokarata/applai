@@ -1,75 +1,105 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.db import CoverLetter, User, Job, get_db
-from app.schemas.cover_letter import CoverLetterCreate, CoverLetterResponse, CoverLetterUpdate
+from app.db import User, Job, CoverLetter, get_db
+from app.schemas.cover_letter import CoverLetterCreate, CoverLetterResponse, CoverLetterSections, CoverLetterUpdate
 from app.services.gemini_service import GeminiService
+import json
 
 router = APIRouter()
 
+gemini_service = GeminiService()
+
 @router.post("/", response_model=CoverLetterResponse, status_code=status.HTTP_201_CREATED)
-def create_cover_letter(
-        cover_letter: CoverLetterCreate,
-        user_id: int,
-        job_id: int,
-        db: Session = Depends(get_db)
-    ):
-    """ Creates a new cover letter for a specific job and user. 
-        If cover_letter_text is not provided, generate it using LLM.
+async def create_cover_letter(
+    *,
+    db: Session = Depends(get_db),
+    user_id: int = Query(...),
+    job_id: int = Query(...),
+    cover_letter_in: CoverLetterCreate = Body(...)
+):
+    """ 
+    Creates a new cover letter: 
+    1. Fetches User and Job context.
+    2. Calls Gemini service to generate structured sections (header+body).
+    3. Saves the structured data directly to the DB's JSON column.
     """
-    # Verify user exists
+    # 1. Fetch User Profile for context
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
+    # Prepare user context dict for the service
+    user_profile_dict = {
+        "full_name": getattr(user, 'full_name', f"{user.name} {user.surname}"), 
+        "email": user.email,
+        "cv_text": getattr(user, 'cv_text', None)
+        # Add any other relevant fields from the User model needed by the prompt
+    }
 
-    # Verify job exists
+    # 2. Fetch Job Details for context
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Job not found"
         )
+    # Prepare job context dict for the service
+    job_details_dict = {
+        "title": job.title,
+        "company": job.company,
+        # Pass structured job_data if it exists and is useful, or specific fields
+        "job_data": getattr(job, 'job_data', None)
+    }
     
-    # Format user profile for LLM
-    user_profile = f"""
-    Name: {user.name} {user.surname}
-    Email: {user.email}
-    CV: {user.cv_text}
-    """
-
-    # Generate cover letter using LLM
-    gemini_service = GeminiService()
-    cover_letter_text = gemini_service.generate_cover_letter(
-        job_data=job.job_data,
-        user_profile=user_profile,
-        output_format="text",
-    )
-
-    # Create new cover letter
-    new_cover_letter = CoverLetter(
-        template_name=cover_letter.template_name,
-        cover_letter_text=cover_letter_text,
-        user_id=user_id,
-        job_id=job_id
-    )
-
-    # Add to database
+    # 3. Generate structured cover letter sections via Gemini Service
     try:
-        db.add(new_cover_letter)
-        db.commit()
-        db.refresh(new_cover_letter)
+        # Call the asynchronous service method
+        generated_sections: CoverLetterSections = await gemini_service.generate_cover_letter(
+            job_details=job_details_dict,
+            user_profile=user_profile_dict,
+            template_name=cover_letter_in.template_name
+        )
     except Exception as e:
+        # Catch errors from the service (API issues, parsing, validation)
+        # TODO: Add logging: logger.error(f"Gemini service failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to generate cover letter content: {str(e)}")
+
+    # 4. Create and Save the new CoverLetter record to the database
+    try:
+        # Instantiate the SQLAlchemy model (CoverLetter from app.db.models)
+        new_cover_letter = CoverLetter(
+            template_name=cover_letter_in.template_name,
+            # Convert the Pydantic sections object to a dict for the JSON column
+            sections=generated_sections.model_dump(mode="json"), 
+            user_id=user_id,
+            job_id=job_id
+            # time_created is handled by DB default
+        )
+
+        # Add the new record to the session
+        db.add(new_cover_letter)
+        # Commit the transaction to save to the database
+        db.commit()
+        # Refresh the instance to get the generated ID and timestamp
+        db.refresh(new_cover_letter)
+        # TODO: Add logging: logger.info(f"Created Cover Letter ID: {new_cover_letter.id}")
+
+        # Return the newly created cover letter object
+        # FastAPI will serialize it based on the response_model (CoverLetterResponse)
+        return new_cover_letter
+
+    except Exception as e:
+        # Roll back the transaction if any database error occurs
         db.rollback()
+        # TODO: Add logging: logger.error(f"Database error creating cover letter: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create cover letter: {str(e)}"
+            detail=f"Failed to save cover letter to database: {str(e)}"
         )
-    
-    return new_cover_letter
 
 @router.get("/{cover_letter_id}", response_model=CoverLetterResponse)
 def get_cover_letter(cover_letter_id: int, db: Session = Depends(get_db)):
@@ -97,7 +127,6 @@ def get_user_cover_letters(user_id: int, db: Session = Depends(get_db)):
     cover_letters = db.query(CoverLetter).filter(CoverLetter.user_id == user_id).all()
     return cover_letters
 
-    
 @router.get("/job/{job_id}", response_model=List[CoverLetterResponse])
 def get_job_cover_letters(job_id: int, db: Session = Depends(get_db)):
     """ Get all cover letters for a specific job. """
@@ -135,7 +164,7 @@ def update_cover_letter(
         )
     
     # Update cover letter fields if provided in the request
-    cover_letter_data = cover_letter_update.model_dump(exclude_unset=True)
+    cover_letter_data = cover_letter_update.model_dump(exclude_unset=True, mode="json")
     
     # Update cover letter attributes
     for key, value in cover_letter_data.items():

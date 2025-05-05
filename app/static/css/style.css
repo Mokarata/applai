@@ -524,6 +524,19 @@ body {
 .pb-lg { padding-bottom: var(--spacing-lg); }
 .pb-xl { padding-bottom: var(--spacing-xl); }
 
+/* Hide visually but keep accessible to screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Hide visually */
 .hidden { display: none !important; }
 
@@ -826,11 +839,11 @@ textarea.form-control {
 .quick-option-btn {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xxs);
+  gap: var(--spacing-xxs); /* already relative via variable */
   background-color: var(--bg-secondary);
   border: 1px solid var(--bg-tertiary);
   border-radius: var(--border-radius);
-  padding: var(--spacing-xs) var(--spacing-lg);
+  padding: var(--spacing-xs) var(--spacing-lg); /* already relative via variable */
   font-size: 13px;
   color: var(--text-primary);
   cursor: pointer;
