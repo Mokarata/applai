@@ -25,27 +25,31 @@ class CoverLetterSections(BaseModel):
 # Base schema defines common fields for cover letter
 class CoverLetterBase(BaseModel):
     """ Base schema for cover letter data."""
-    template_name: Optional[str] = Field(None, description="Name of the template used, e.g., 'standard', 'creative'")
-    sections: Optional[CoverLetterSections] = Field(None, description="The structured content of the cover letter")
+    template_name: Optional[str] = Field(None, description="Name of the template used")
+    sections: Optional[CoverLetterSections] = Field(None, description="The structured sections of the cover letter.")
+    cover_letter_text: Optional[str] = Field(None, description="The final assembled text of the cover letter.")
 
     class Config:
         from_attributes = True
 
-class CoverLetterCreate(CoverLetterBase):
-    """ Schema for creating a new cover letter."""
-    template_name: str
-    sections: Optional[CoverLetterSections] = None
+class CoverLetterCreate(BaseModel): 
+    """ Schema for initiating cover letter generation."""
+    template_name: str = Field(..., description="Name of the template to use for generation.")
 
 class CoverLetterUpdate(BaseModel):
     """ Schema for updating an existing cover letter."""
-    template_name: Optional[str] = Field(None, description="Name of the template used, e.g., 'standard', 'creative'")
-    sections: Optional[CoverLetterSections] = Field(None, description="The structured content of the cover letter")
+    sections: Optional[CoverLetterSections] = Field(None, description="The updated structured sections for the cover letter.")
+    cover_letter_text: Optional[str] = Field(None, description="The updated text for the cover letter.")
+    template_name: Optional[str] = Field(None, description="Optionally update the template name associated.")
 
-class CoverLetterResponse(CoverLetterBase):
+class CoverLetterResponse(BaseModel): 
     """ Schema for cover letter response, include IDs and creation time."""
     id: int
     user_id: int
     job_id: int
+    template_name: Optional[str] = None 
+    sections: Optional[CoverLetterSections] = None
+    cover_letter_text: Optional[str] = None 
     time_created: datetime
 
     class Config:
