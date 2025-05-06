@@ -1,7 +1,10 @@
 """ API router for all endpoints."""
 
+# FastAPI - API routing components
 from fastapi import APIRouter
-from app.api.endpoints import users, jobs, cover_letters
+
+# Application-specific imports - Endpoint modules
+from .endpoints import users, jobs, cover_letters
 
 api_router = APIRouter()
 

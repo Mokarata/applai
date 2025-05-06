@@ -1,11 +1,16 @@
+# Python standard library - Core language functionality
+from contextlib import asynccontextmanager
+from pathlib import Path
+
+# FastAPI framework - Web application components
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pathlib import Path
+
+# Application-specific imports - Local modules
 from app.api import api_router
 from app.core.logging import get_logger
-from contextlib import asynccontextmanager
 
 # Get a logger for the main module
 logger = get_logger(__name__)

@@ -1,7 +1,10 @@
 """ Schemas for cover letter management."""
-from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
+# Python standard library - Core language functionality
 from datetime import date, datetime
+from typing import Optional, List, Dict, Any
+
+# Pydantic - Data validation
+from pydantic import BaseModel, Field
 
 class CoverLetterSections(BaseModel):
     """ Schema defining the standard sections of a cover letter"""

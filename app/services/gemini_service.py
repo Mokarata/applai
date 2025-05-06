@@ -1,14 +1,18 @@
-# app/services/gemini_service.py
+# Python standard library - Core language functionality
 import logging
 from typing import Dict, Any, Type, Optional
 
+# LangChain dependencies - AI model and prompt components
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
-from langchain_core.pydantic_v1 import BaseModel, Field # Use langchain's Pydantic for parser definition
+from langchain_core.pydantic_v1 import BaseModel, Field  # Use langchain's Pydantic for parser definition
+
+# FastAPI components - Web framework utilities
 from fastapi import HTTPException, status
 
-from app.core.config import settings # Import your settings
+# Application-specific imports - Configuration access
+from app.core.config import settings  # Import your settings
 
 # Setup logger for this service
 logger = logging.getLogger(__name__)

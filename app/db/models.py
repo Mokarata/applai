@@ -1,7 +1,12 @@
+# SQLAlchemy - Database ORM components
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, JSON, Text, Enum
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
+
+# Python standard library - Core language functionality
 import enum
+
+# Local application imports - Database connection
 from .database import Base
 
 

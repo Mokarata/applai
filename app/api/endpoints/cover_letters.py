@@ -1,8 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from typing import List
+# Python standard library - Core types
+from typing import List, Optional
 
+# FastAPI - Web framework components
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+# Application schemas - Data validation 
 from app.schemas.cover_letter import CoverLetterCreate, CoverLetterResponse, CoverLetterUpdate
+
+# Application services - Business logic
 from app.services.cover_letter_service import CoverLetterService
+
+# API dependencies - Service injection
 from app.api.dependencies import get_cover_letter_service
 
 router = APIRouter()

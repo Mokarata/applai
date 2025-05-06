@@ -1,11 +1,20 @@
-# app/api/dependencies.py
+# Python standard library - Core language functionality
+from typing import Generator
+
+# FastAPI - Dependency injection
 from fastapi import Depends, HTTPException, status
+
+# SQLAlchemy - Database components
 from sqlalchemy.orm import Session
-from app.db.database import get_db
-from app.services.job_service import JobService
+
+# Application services - Business logic layer
 from app.services.user_service import UserService
+from app.services.job_service import JobService  
 from app.services.cover_letter_service import CoverLetterService
 from app.services.gemini_service import GeminiService
+
+# Application configuration - Database connection
+from app.db.database import get_db
 from app.core.config import get_settings # Assuming settings hold API key
 
 def get_gemini_service() -> GeminiService:

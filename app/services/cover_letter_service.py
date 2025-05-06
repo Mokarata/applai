@@ -1,11 +1,14 @@
-import logging
+# Python standard library - Core language functionality
 import json
-from typing import List, Optional, Dict, Any
+import logging
 from datetime import date
+from typing import List, Optional, Dict, Any
 
+# FastAPI and database components - Web and persistence layers
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+# Application-specific imports - Models, schemas and services
 from app.db import models
 from app.schemas import cover_letter as cover_letter_schema, CoverLetterSections
 from app.services.gemini_service import GeminiService, CoverLetterJson
@@ -25,7 +28,7 @@ class CoverLetterService:
         self.db = db
         self.gemini_service = gemini_service
 
-    def _get_user_or_404(self, user_id: int) -> models.User:
+    def _get_user_or_404(self, user_id: int) -> models.User | None:
         """Helper to fetch user by ID or raise 404."""
         user = self.db.query(models.User).filter(models.User.id == user_id).first()
         if not user:
@@ -33,7 +36,7 @@ class CoverLetterService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         return user
 
-    def _get_job_or_404(self, job_id: int) -> models.Job:
+    def _get_job_or_404(self, job_id: int) -> models.Job | None:
         """Helper to fetch job by ID or raise 404."""
         job = self.db.query(models.Job).filter(models.Job.id == job_id).first()
         if not job:
