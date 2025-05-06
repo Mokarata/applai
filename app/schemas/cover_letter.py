@@ -1,10 +1,11 @@
 """ Schemas for cover letter management."""
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import date, datetime
 
 class CoverLetterSections(BaseModel):
     """ Schema defining the standard sections of a cover letter"""
+    title: Optional[str] = Field(None, description="A concise title for the cover letter (e.g., 'Application for Software Engineer at TechCorp')")
     applicant_name: Optional[str] = Field(None, description="Applicant's full name.")
     applicant_contact: Optional[List[str]] = Field(None, description="Applicant contact details (e.g., phone, email, LinkedIn URL). List of strings.")
     date_generated: Optional[date] = Field(None, description="Date the cover letter was generated.")
@@ -22,10 +23,18 @@ class CoverLetterSections(BaseModel):
     conclusion: Optional[str] = Field(None, description="Closing paragraph: reiterate interest, call to action.")
     closing: Optional[str] = Field(None, description="e.g., 'Sincerely,'.")
 
+# Define Generation Options
+class GenerationOptions(BaseModel):
+    style: Optional[str] = Field("standard", description="Desired style (e.g., standard, creative, technical)")
+    language: Optional[str] = Field("English", description="Desired language")
+    tone: Optional[str] = Field("professional", description="Desired tone (e.g., professional, enthusiastic, concise)")
+    # example_ids: Optional[List[int]] = Field(None, description="List of IDs for example cover letters to use as few-shot examples")
+    # Add more options as needed
+
 # Base schema defines common fields for cover letter
 class CoverLetterBase(BaseModel):
     """ Base schema for cover letter data."""
-    template_name: Optional[str] = Field(None, description="Name of the template used")
+    title: Optional[str] = Field(None, description="The title of the cover letter.")
     sections: Optional[CoverLetterSections] = Field(None, description="The structured sections of the cover letter.")
     cover_letter_text: Optional[str] = Field(None, description="The final assembled text of the cover letter.")
 
@@ -34,20 +43,21 @@ class CoverLetterBase(BaseModel):
 
 class CoverLetterCreate(BaseModel): 
     """ Schema for initiating cover letter generation."""
-    template_name: str = Field(..., description="Name of the template to use for generation.")
+    generation_options: Optional[GenerationOptions] = Field(None, description="Options for customizing the generation process")
 
 class CoverLetterUpdate(BaseModel):
     """ Schema for updating an existing cover letter."""
+    title: Optional[str] = Field(None, description="The updated title for the cover letter.")
     sections: Optional[CoverLetterSections] = Field(None, description="The updated structured sections for the cover letter.")
     cover_letter_text: Optional[str] = Field(None, description="The updated text for the cover letter.")
-    template_name: Optional[str] = Field(None, description="Optionally update the template name associated.")
 
 class CoverLetterResponse(BaseModel): 
     """ Schema for cover letter response, include IDs and creation time."""
     id: int
     user_id: int
     job_id: int
-    template_name: Optional[str] = None 
+    title: Optional[str] = Field(None, description="The title of the cover letter.")
+    generation_options: Optional[GenerationOptions] = Field(None, description="Options used during generation")
     sections: Optional[CoverLetterSections] = None
     cover_letter_text: Optional[str] = None 
     time_created: datetime

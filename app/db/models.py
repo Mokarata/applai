@@ -65,7 +65,8 @@ class CoverLetter(Base):
     __tablename__ = "cover_letters"
 
     id = Column(Integer, primary_key=True, index=True)
-    template_name = Column(String, index=True)
+    title = Column(String, nullable=True, index=True)
+    generation_options = Column(JSON, nullable=True) 
     sections = Column(JSON, nullable=True) # Keep this for structured data
     # Add this column for the assembled text
     cover_letter_text = Column(Text, nullable=True) 

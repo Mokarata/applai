@@ -17,7 +17,7 @@ async def create_cover_letter(
 ):
     """
     Creates a new cover letter using the CoverLetterService.
-    Requires user_id and job_id as query parameters and template_name in the body.
+    Requires user_id and job_id as query parameters and generation_options in the body.
     """
     try:
         new_cover_letter = cover_letter_service.generate_and_save_cover_letter(

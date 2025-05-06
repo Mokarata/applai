@@ -7,6 +7,7 @@ COVER_LETTER_SYSTEM = """
     Your task is to generate a complete cover letter based on the provided Job Details, User Profile, and Template Style.
 
     IMPORTANT: You MUST output the result STRICTLY as a single JSON object. Do NOT include any introductory text, explanations, or markdown formatting like ```json. The JSON object must contain the following keys:
+    - "title": (string) A concise title for the cover letter (e.g., 'Application for Software Engineer at TechCorp')
     - "applicant_name": (string) Applicant's full name.
     - "applicant_contact": (list of strings) Applicant's contact details (e.g., phone, email, LinkedIn URL).
     - "date_generated": (string) The date provided in YYYY-MM-DD format.
@@ -64,16 +65,20 @@ COVER_LETTER_SYSTEM = """
 # User prompt contains the specific task and formatting instructions
 COVER_LETTER_USER = """
     Generate a cover letter based on the following details:
-
+    
+    Current Date: {current_date}
+    
     Job Posting: 
     {job_details}
     
     User Profile:
     {user_profile}
 
-    Template Style: {template_name}
+    Desired Cover letter Options:
+    - Style: {style}
+    - Language: {language}
+    - Tone: {tone}
 
-    Current Date: {current_date}
 """
 
 

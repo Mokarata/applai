@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 # Define a Pydantic model mirroring the JSON structure requested in the system prompt
 # This helps LangChain's JsonOutputParser validate the LLM's response.
 class CoverLetterJson(BaseModel):
+    # Add title field first for clarity
+    title: str = Field(description="A concise title for the cover letter (e.g., 'Application for Software Engineer at TechCorp')")
     applicant_name: str = Field(description="Applicant's full name.")
     applicant_contact: list[str] = Field(description="Applicant's contact details.")
     date_generated: str = Field(description="The date provided in YYYY-MM-DD format.")

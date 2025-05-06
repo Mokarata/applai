@@ -7,14 +7,14 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db import models
-from app.schemas import cover_letter as cover_letter_schema
+from app.schemas import cover_letter as cover_letter_schema, CoverLetterSections
 from app.services.gemini_service import GeminiService, CoverLetterJson
 from resources.prompts import cover_letter_prompts
 
 
 # Setup logger for this service
 logger = logging.getLogger(__name__)
-# logging.basicConfig(level=logging.INFO) # Configure if not done elsewhere
+
 
 class CoverLetterService:
     """
@@ -56,50 +56,29 @@ class CoverLetterService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cover letter not found")
         return cover_letter
 
-    def _assemble_cover_letter_text(self, structured_data: Dict[str, Any]) -> str:
-        """
-        Assembles the structured JSON data from the LLM into a single
-        formatted string suitable for storage and display.
-        """
-        # Basic assembly - adjust formatting as needed (e.g., add markdown)
-        applicant_contact_str = "\n".join(structured_data.get("applicant_contact", []))
-
+    def _assemble_cover_letter_text(self, sections: CoverLetterSections) -> str:
+        # Simple assembly logic, improve as needed
+        # This assumes your CoverLetterSections model has these fields.
+        # Adjust based on your actual CoverLetterSections fields.
         parts = [
-            f"Applicant: {structured_data.get('applicant_name', 'N/A')}",
-            f"Contact:\n{applicant_contact_str}",
-            f"Date: {structured_data.get('date_generated', 'N/A')}",
-            "\n" + "="*20 + "\n", # Separator
-            f"To: {structured_data.get('recipient_name', 'Hiring Manager')}",
+            # sections.title, # Title usually isn't part of the letter body itself
+            f"Applicant: {sections.applicant_name}" if sections.applicant_name else None,
+            f"Contact: {', '.join(sections.applicant_contact)}" if sections.applicant_contact else None,
+            f"Date: {sections.date_generated}" if sections.date_generated else None,
+            f"\nTo: {sections.recipient_name}" if sections.recipient_name else None,
+            sections.recipient_title,
+            sections.recipient_company,
+            sections.recipient_address,
+            f"\n{sections.greeting}\n" if sections.greeting else None,
+            sections.introduction,
+            sections.skills,
+            sections.projects,
+            sections.company_fit,
+            sections.conclusion,
+            f"\n{sections.closing}" if sections.closing else None,
+            sections.applicant_name # Signature
         ]
-        if structured_data.get('recipient_title'):
-             parts.append(f"   {structured_data.get('recipient_title')}")
-        parts.append(f"   {structured_data.get('recipient_company', 'N/A')}")
-        if structured_data.get('recipient_address'):
-             parts.append(f"   {structured_data.get('recipient_address')}")
-
-        parts.extend([
-            "\n" + "="*20 + "\n",
-            structured_data.get('greeting', ''),
-            "\n",
-            structured_data.get('introduction', ''),
-            "\n",
-            structured_data.get('skills', ''),
-            "\n",
-            structured_data.get('projects', ''),
-            "\n",
-            structured_data.get('company_fit', ''),
-            "\n",
-            structured_data.get('conclusion', ''),
-            "\n",
-            structured_data.get('closing', ''),
-            "\n",
-            structured_data.get('applicant_name', '') # Sign off with name
-        ])
-
-        # Replace multiple newlines with just two for paragraph spacing
-        full_text = "\n".join(filter(None, parts))
-        return full_text.replace("\n\n\n", "\n\n")
-
+        return "\n".join(filter(None, parts))
 
     def generate_and_save_cover_letter(
         self,
@@ -116,6 +95,15 @@ class CoverLetterService:
         # 1. Fetch required data
         user = self._get_user_or_404(user_id)
         job = self._get_job_or_404(job_id)
+
+        # Extract generation options with defaults
+        options = cover_letter_data.generation_options
+        style = options.style if options and options.style else "standard"
+        language = options.language if options and options.language else "German"
+        tone = options.tone if options and options.tone else "professional"
+        # example_ids = options.example_ids if options and options.example_ids else [] # For future few-shot
+
+        logger.info(f"Generation options: style='{style}', language='{language}', tone='{tone}'")
 
         # 2. Prepare input variables for the prompt templates
         # Convert models to simple dictionaries first
@@ -141,8 +129,12 @@ class CoverLetterService:
         input_vars = {
             "job_details": json.dumps(job_details_dict, indent=2), # Pass as JSON string
             "user_profile": json.dumps(user_profile_dict, indent=2), # Pass as JSON string
-            "template_name": cover_letter_data.template_name,
+            "style": style, # Add new style option
+            "language": language, # Add new language option
+            "tone": tone, # Add new tone option
             "current_date": date.today().isoformat()
+            # Add placeholder for few-shot examples if implementing
+            # "few_shot_examples": formatted_examples_string
         }
         logger.debug(f"Input variables prepared for GeminiService: {list(input_vars.keys())}")
 
@@ -167,27 +159,32 @@ class CoverLetterService:
                 detail="An internal error occurred during cover letter generation."
             )
 
-        # 4. Assemble the structured parts into final text
-        final_cover_letter_text = self._assemble_cover_letter_text(generated_data)
+        # 4. Extract title from the generated data
+        letter_title = generated_data.get("title", "Untitled Cover Letter")
+
+        # 5. Map available fields from structured_output (which is a CoverLetterJson dict) to CoverLetterSections
+        sections_data_dict = {}
+        for field_name in CoverLetterSections.model_fields.keys():
+            if field_name in generated_data:
+                sections_data_dict[field_name] = generated_data[field_name]
+            elif field_name == 'title': # Ensure title is set from letter_title if not directly in output with that key for sections
+                sections_data_dict[field_name] = letter_title
+            # else: field will be default or None as per CoverLetterSections definition
+
+        sections_model = CoverLetterSections(**sections_data_dict)
+        logger.debug(f"CoverLetterSections model populated: {sections_model.model_dump_json(indent=2)}")
+
+        # 6. Assemble the structured parts into final text
+        final_cover_letter_text = self._assemble_cover_letter_text(sections_model)
         logger.debug("Assembled structured data into final cover letter text.")
 
-        # 5. Prepare structured data for saving
-        sections_data = {}
-        if hasattr(generated_data, 'model_dump'): # Pydantic v2
-            sections_data = generated_data.model_dump(mode='json')
-        elif hasattr(generated_data, 'dict'): # Pydantic v1
-            sections_data = generated_data.dict()
-        elif isinstance(generated_data, dict):
-            sections_data = generated_data
-        else:
-            logger.warning("Generated data is not a Pydantic model or dict, saving sections as empty.")
-
-        # 6. Create and save the cover letter database record with BOTH fields
+        # 7. Create and save the cover letter database record with BOTH fields
         db_cover_letter = models.CoverLetter(
             user_id=user_id,
             job_id=job_id,
-            template_name=cover_letter_data.template_name,
-            sections=sections_data,
+            title=letter_title, # Save the extracted title
+            generation_options=options.model_dump(mode='json') if options else None,
+            sections=sections_model.model_dump(mode='json'), # Save the CoverLetterSections model
             cover_letter_text=final_cover_letter_text,
         )
         self.db.add(db_cover_letter)
@@ -269,3 +266,7 @@ class CoverLetterService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to delete cover letter from database."
             )
+
+    def get_cover_letter_by_id(self, cover_letter_id: int) -> Optional[models.CoverLetter]:
+        logger.info(f"Fetching cover letter id: {cover_letter_id}")
+        return self.db.query(models.CoverLetter).filter(models.CoverLetter.id == cover_letter_id).first()
