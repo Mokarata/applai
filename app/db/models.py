@@ -9,76 +9,92 @@ import enum
 # Local application imports - Database connection
 from .database import Base
 
-
+# --- User Model ---
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     surname = Column(String, index=True)
-    email = Column(String, unique=True, index=True)
-    password = Column(String)
+    user_name = Column(String, unique=True, index=True, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
     cv_text = Column(String)
-    is_active = Column(Boolean, default=True)
+    contact_info = Column(JSON, nullable=True)
+    is_active = Column(Boolean, default=True, server_default="true", nullable=False)
+    is_admin = Column(Boolean, default=False, server_default="false", nullable=False)
 
     # Relationships
     jobs = relationship("Job", back_populates="user")
     cover_letters = relationship("CoverLetter", back_populates="user")
 
+
+# --- Job Model ---
 # Define an Enum for the source type
 class JobSourceType(enum.Enum):
     url = "url"
-    file = "file",
-    text = "text",
+    file = "file"
+    text = "text"
     manual = "manual"
-
 
 class Job(Base):
     __tablename__ = "jobs"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
+    status = Column(String, nullable=False, default="pending", index=True)
 
     # --- Source Information ---
-    source_type = Column(Enum(JobSourceType), nullable=False, index=True)
-    source_value = Column(Text, nullable=False) # URL, file path, or text content
-    source_filename = Column(String, nullable=True) # filename if file source
-    source_mime_type = Column(String, nullable=True) # MIME type if file source
+    source_data = Column(JSON, nullable=False)
+    raw_text = Column(Text, nullable=True) # Dedicated column for processed text
 
     # --- Extracted/Structured Information (Populated after Gemini processing) ---
-    title = Column(String, index=True, nullable=True)
-    company = Column(String, index=True, nullable=True)
-    location = Column(String, nullable=True)
-    job_url = Column(String, nullable=True) # Extracted/provided
-    date_posted = Column(DateTime(timezone=True), nullable=True)
-    submission_deadline = Column(DateTime(timezone=True), nullable=True)
-    hiring_manager = Column(String, nullable=True)
-    status = Column(String, nullable=False, default="pending", index=True)
-    full_description = Column(Text, nullable=True) # Extracted full text
+    extracted_data = Column(JSON, nullable=True)
 
      # --- Timestamps ---
     time_created = Column(DateTime(timezone=True), server_default=func.now())
     time_updated = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now()) # Added server_default
     
     # --- Relationships ---
+    company = relationship("Company", back_populates="jobs")
     user = relationship("User", back_populates="jobs")
     cover_letters = relationship("CoverLetter", back_populates="job", cascade="all, delete-orphan")
 
-    # Removed the redundant 'job_data' column definition from the Job model.
+# --- Company Model ---
+class Company(Base):
+    __tablename__ = "companies"
 
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True, nullable=False)
+    contact_info = Column(JSON, nullable=True)
+    analytics = Column(JSON, nullable=True)
+    status = Column(String, nullable=False, default="pending", index=True)
+
+    # --- Timestamps ---
+    time_created = Column(DateTime(timezone=True), server_default=func.now())
+    time_updated = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # --- Relationships ---
+    jobs = relationship("Job", back_populates="company")
+
+# --- CoverLetter Model ---
 class CoverLetter(Base):
     __tablename__ = "cover_letters"
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=True, index=True)
-    generation_options = Column(JSON, nullable=True) 
-    sections = Column(JSON, nullable=True) # Keep this for structured data
-    # Add this column for the assembled text
-    cover_letter_text = Column(Text, nullable=True) 
+    generation_options = Column(JSON, nullable=True)
+    llm_service_used = Column(String, nullable=True)
+    sections = Column(JSON, nullable=True)
+    text = Column(Text, nullable=True)
+
+    # --- Timestamps ---
     time_created = Column(DateTime(timezone=True), server_default=func.now())
+    time_updated = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # --- Relationships ---
     user_id = Column(Integer, ForeignKey("users.id"))
     job_id = Column(Integer, ForeignKey("jobs.id"))
-
-    # Relationships
     user = relationship("User", back_populates="cover_letters")
     job = relationship("Job", back_populates="cover_letters")

@@ -4,6 +4,10 @@ from typing import List, Optional
 # FastAPI - Web framework components
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 
+# App dependencies
+from app.db import User
+from app.core.dependencies import get_current_user
+
 # Application schemas - Data validation 
 from app.schemas.cover_letter import CoverLetterCreate, CoverLetterResponse, CoverLetterUpdate
 
@@ -19,19 +23,20 @@ router = APIRouter()
 async def create_cover_letter(
     *,
     cover_letter_service: CoverLetterService = Depends(get_cover_letter_service),
-    user_id: int = Query(..., description="ID of the user requesting the letter."),
     job_id: int = Query(..., description="ID of the job to base the letter on."),
-    cover_letter_in: CoverLetterCreate
+    cover_letter_in: CoverLetterCreate,
+    current_user: User = Depends(get_current_user)
 ):
     """
-    Creates a new cover letter using the CoverLetterService.
-    Requires user_id and job_id as query parameters and generation_options in the body.
+    Creates a new cover letter for the authenticated user.
+    Requires job_id as a query parameter and generation_options in the body.
     """
     try:
-        new_cover_letter = cover_letter_service.generate_and_save_cover_letter(
+        new_cover_letter = await cover_letter_service.generate_cover_letter(
             cover_letter_data=cover_letter_in,
-            user_id=user_id,
-            job_id=job_id
+            user_id=current_user.id,
+            job_id=job_id,
+            current_user=current_user
         )
         return new_cover_letter
     except HTTPException as http_exc:
@@ -47,14 +52,14 @@ async def create_cover_letter(
 def get_cover_letter(
     *,
     cover_letter_id: int,
-    user_id: int = Query(..., description="ID of the user owning the letter."),
-    cover_letter_service: CoverLetterService = Depends(get_cover_letter_service)
+    cover_letter_service: CoverLetterService = Depends(get_cover_letter_service),
+    current_user: User = Depends(get_current_user)
 ):
-    """ Get a specific cover letter by ID for a given user. """
+    """ Get a specific cover letter by ID, checking for ownership or admin rights. """
     try:
         cover_letter = cover_letter_service.get_cover_letter(
             cover_letter_id=cover_letter_id,
-            user_id=user_id
+            current_user=current_user
         )
         return cover_letter
     except HTTPException as http_exc:
@@ -62,15 +67,21 @@ def get_cover_letter(
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal server error")
 
-@router.get("/user/{user_id}", response_model=List[CoverLetterResponse])
-def get_user_cover_letters(
+@router.get("/", response_model=List[CoverLetterResponse])
+def get_all_cover_letters(
     *,
-    user_id: int,
-    cover_letter_service: CoverLetterService = Depends(get_cover_letter_service)
+    user_id: Optional[int] = None,
+    cover_letter_service: CoverLetterService = Depends(get_cover_letter_service),
+    current_user: User = Depends(get_current_user)
 ):
-    """ Get all cover letters for a specific user. """
+    """ 
+    Get all cover letters.
+    - Non-admins can only retrieve their own.
+    - Admins can retrieve for a specific user_id or all if user_id is not provided.
+    """ 
     try:
-        cover_letters = cover_letter_service.get_cover_letters_by_user(user_id=user_id)
+        query_user_id = current_user.id if not current_user.is_admin else user_id
+        cover_letters = cover_letter_service.get_cover_letters_by_user(user_id=query_user_id)
         return cover_letters
     except HTTPException as http_exc:
         raise http_exc
@@ -78,19 +89,19 @@ def get_user_cover_letters(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.put("/{cover_letter_id}", response_model=CoverLetterResponse)
-def update_cover_letter(
+async def update_cover_letter(
     *,
     cover_letter_id: int,
-    user_id: int = Query(..., description="ID of the user owning the letter."),
     cover_letter_update: CoverLetterUpdate,
-    cover_letter_service: CoverLetterService = Depends(get_cover_letter_service)
+    cover_letter_service: CoverLetterService = Depends(get_cover_letter_service),
+    current_user: User = Depends(get_current_user)
 ):
-    """ Update a cover letter by ID for a given user. """
+    """ Update a cover letter by ID, checking for ownership or admin rights. """
     try:
-        updated_cover_letter = cover_letter_service.update_cover_letter(
+        updated_cover_letter = await cover_letter_service.update_cover_letter(
             cover_letter_id=cover_letter_id,
-            user_id=user_id,
-            update_data=cover_letter_update
+            update_data=cover_letter_update,
+            current_user=current_user
         )
         return updated_cover_letter
     except HTTPException as http_exc:
@@ -103,14 +114,14 @@ def update_cover_letter(
 def delete_cover_letter(
     *,
     cover_letter_id: int,
-    user_id: int = Query(..., description="ID of the user owning the letter."),
-    cover_letter_service: CoverLetterService = Depends(get_cover_letter_service)
+    cover_letter_service: CoverLetterService = Depends(get_cover_letter_service),
+    current_user: User = Depends(get_current_user)
 ):
-    """ Delete a cover letter by ID for a given user. """
+    """ Delete a cover letter by ID, checking for ownership or admin rights. """
     try:
         cover_letter_service.delete_cover_letter(
             cover_letter_id=cover_letter_id,
-            user_id=user_id
+            current_user=current_user
         )
         return None
     except HTTPException as http_exc:

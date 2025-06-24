@@ -1,0 +1,26 @@
+Metadata-Version: 2.4
+Name: ai-cover-letter
+Version: 0.1.0
+Summary: Add your description here
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+Requires-Dist: bcrypt==4.0.1
+Requires-Dist: fastapi==0.109.2
+Requires-Dist: google-generativeai>=0.3.1
+Requires-Dist: langchain==0.1.0
+Requires-Dist: langchain-google-genai==0.0.5
+Requires-Dist: passlib==1.7.4
+Requires-Dist: prettier>=0.0.7
+Requires-Dist: pydantic==2.3.0
+Requires-Dist: pylint>=3.3.6
+Requires-Dist: python-dotenv==1.0.0
+Requires-Dist: python-jose[all]>=3.3.0
+Requires-Dist: pypdf>=4.0.0
+Requires-Dist: python-multipart>=0.0.20
+Requires-Dist: requests==2.31.0
+Requires-Dist: sqlalchemy==2.0.23
+Requires-Dist: uvicorn==0.24.0
+Requires-Dist: httpx==0.27.0
+Provides-Extra: test
+Requires-Dist: pytest; extra == "test"
+Requires-Dist: pytest-asyncio; extra == "test"

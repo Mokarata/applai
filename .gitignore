@@ -1,6 +1,9 @@
-# 1. Environment & Secrets
+# Environment & Secrets
+# Ignore the .env file containing secrets
 .env
-.env.example
+
+# Do not ignore the example file
+!.env.example
 
 # 2. Database files
 app.db

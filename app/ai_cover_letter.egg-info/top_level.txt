@@ -1,0 +1,6 @@
+api
+core
+db
+schemas
+services
+utils

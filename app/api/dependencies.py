@@ -1,42 +1,83 @@
+""" Dependencies for API endpoints layer"""
+
 # Python standard library - Core language functionality
-from typing import Generator
+from typing import Generator, Optional
+import threading
 
 # FastAPI - Dependency injection
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, BackgroundTasks
 
 # SQLAlchemy - Database components
 from sqlalchemy.orm import Session
 
 # Application services - Business logic layer
-from app.services.user_service import UserService
-from app.services.job_service import JobService  
-from app.services.cover_letter_service import CoverLetterService
-from app.services.gemini_service import GeminiService
+from app.services import (
+    UserService,
+    JobService,
+    CoverLetterService,
+    CompanyService,
+    GeminiService,
+    OpenAIService,
+    GroqService,
+    LLMServiceProtocol, 
+)
 
 # Application configuration - Database connection
-from app.db.database import get_db
-from app.core.config import get_settings # Assuming settings hold API key
+from app.db import get_db
+from app.core import settings  
 
-def get_gemini_service() -> GeminiService:
-    """Provides an instance of the GeminiService."""
-    settings = get_settings()
-    # Ensure the API key is configured (add error handling if needed)
-    # Use the exact field name defined in the Settings model (uppercase)
-    if not settings.GOOGLE_API_KEY: 
-         # Use HTTPException for consistency in API layer dependencies
-         raise HTTPException(
-             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-             detail="GOOGLE_API_KEY must be configured in settings."
-         )
-    # Use the exact field name defined in the Settings model (uppercase)
-    return GeminiService(api_key=settings.GOOGLE_API_KEY)
+class LLMServiceProvider:
+    """
+    A thread-safe, lazy-loading provider for the LLM service.
+    Acts as a singleton factory to ensure only one instance of the LLM service
+    is created during the application's lifecycle.
+    """
+    _instance: Optional[LLMServiceProtocol] = None
+    _lock = threading.Lock()
 
-def get_job_service(db: Session = Depends(get_db)) -> JobService:
-    """Provides an instance of the JobService with a database session."""
-    # JobService currently gets GeminiService internally if needed,
-    # but we could inject it here too for consistency if preferred.
-    # Assuming GeminiService is initialized within JobService when required.
-    return JobService(db=db)
+    def __call__(self) -> LLMServiceProtocol:
+        # Use a lock to ensure thread-safe singleton creation
+        with self._lock:
+            if self._instance is None:
+                llm_service_name = settings.ACTIVE_LLM_SERVICE
+                api_key_is_present = False
+                
+                if llm_service_name == "GEMINI" and settings.GOOGLE_API_KEY:
+                    self._instance = GeminiService()
+                    api_key_is_present = True
+                elif llm_service_name == "OPENAI" and settings.OPENAI_API_KEY:
+                    self._instance = OpenAIService()
+                    api_key_is_present = True
+                elif llm_service_name == "GROQ" and settings.GROQ_API_KEY:
+                    self._instance = GroqService()
+                    api_key_is_present = True
+
+                if not api_key_is_present:
+                    # This will be raised only if no valid LLM service is configured
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail=f"LLM service '{llm_service_name}' is not configured with an API key."
+                    )
+        return self._instance
+
+# Create a single instance of the provider that will be used for dependency injection
+get_llm_service = LLMServiceProvider()
+
+def get_company_service(
+    db: Session = Depends(get_db),
+    llm_service: LLMServiceProtocol = Depends(get_llm_service)
+) -> CompanyService:
+    """Provides an instance of the CompanyService with a database session and LLM service."""
+    return CompanyService(db=db, llm_service=llm_service)
+
+def get_job_service(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db), 
+    llm_service: LLMServiceProtocol = Depends(get_llm_service),
+    company_service: CompanyService = Depends(get_company_service),
+) -> JobService:
+    """Provides an instance of the JobService with a database session, LLM service, and background tasks."""
+    return JobService(db=db, llm_service=llm_service, company_service=company_service, background_tasks=background_tasks)
 
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
     """Provides an instance of the UserService with a database session."""
@@ -44,10 +85,10 @@ def get_user_service(db: Session = Depends(get_db)) -> UserService:
 
 def get_cover_letter_service(
     db: Session = Depends(get_db),
-    gemini_service: GeminiService = Depends(get_gemini_service)
+    llm_service: LLMServiceProtocol = Depends(get_llm_service)
 ) -> CoverLetterService:
     """
     Provides an instance of the CoverLetterService with a database session
-    and a GeminiService instance.
+    and a LLMServiceProtocol instance.
     """
-    return CoverLetterService(db=db, gemini_service=gemini_service)
+    return CoverLetterService(db=db, llm_service=llm_service)

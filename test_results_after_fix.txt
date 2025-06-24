@@ -1,0 +1,109 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.3, pytest-8.4.1, pluggy-1.6.0 -- /Users/mokara/DEV/ai_cover_letter/.venv/bin/python3.12
+cachedir: .pytest_cache
+rootdir: /Users/mokara/DEV/ai_cover_letter
+configfile: pyproject.toml
+plugins: anyio-4.9.0, asyncio-1.0.0
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 25 items
+
+app/tests/test_cover_letters.py::test_create_cover_letter FAILED         [  4%]
+
+=================================== FAILURES ===================================
+___________________________ test_create_cover_letter ___________________________
+
+client = <starlette.testclient.TestClient object at 0x12b54dfa0>
+transactional_session = <sqlalchemy.orm.session.Session object at 0x12b54df70>
+auth_headers = {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlckBleGFtcGxlLmNvbSIsImV4cCI6MTc1MDY3ODkzMn0._l--cpZtWpSFzmLjNhF5qzyuunstRMHtzYvMyZsmR2M'}
+test_user = <app.db.models.User object at 0x12b29edb0>
+test_job = <app.db.models.Job object at 0x12b5f3b00>
+mock_llm_service = <AsyncMock spec='LLMServiceProtocol' id='5020514016'>
+
+    async def test_create_cover_letter(
+        client: TestClient,
+        transactional_session: Session,
+        auth_headers: dict,
+        test_user: User,
+        test_job: Job,
+        mock_llm_service: AsyncMock
+    ):
+        """Test successful creation of a cover letter."""
+        generation_data = GenerationOptions(style="professional", tone="enthusiastic", language="en", length="standard")
+        payload = {"generation_options": generation_data.model_dump()}
+    
+        response = client.post(
+            f"{settings.API_V1_STR}/cover-letters/?job_id={test_job.id}",
+            headers=auth_headers,
+            json=payload,
+        )
+>       assert response.status_code == 200
+E       assert 500 == 200
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+app/tests/test_cover_letters.py:71: AssertionError
+---------------------------- Captured stderr setup -----------------------------
+🟢 INFO    [13:12:11] [main] Application starting up
+🟢 INFO    [13:12:12] [app.services.job_service] Unified job creation for user 1 from source: text
+🟢 INFO    [13:12:12] [app.utils.text_processing] Extracting text from job source
+🟢 INFO    [13:12:12] [app.utils.text_processing] Cleaning text
+🟢 INFO    [13:12:12] [app.services.job_service] Successfully created job 1 for user 1
+------------------------------ Captured log setup ------------------------------
+INFO     main:main.py:21 Application starting up
+INFO     app.services.job_service:job_service.py:57 Unified job creation for user 1 from source: text
+INFO     app.utils.text_processing:text_processing.py:110 Extracting text from job source
+INFO     app.utils.text_processing:text_processing.py:190 Cleaning text
+INFO     app.services.job_service:job_service.py:118 Successfully created job 1 for user 1
+--------------------------- Captured stderr teardown ---------------------------
+🟢 INFO    [13:12:12] [main] Application shutting down
+---------------------------- Captured log teardown -----------------------------
+INFO     main:main.py:24 Application shutting down
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/starlette/formparsers.py:12
+  /Users/mokara/DEV/ai_cover_letter/.venv/lib/python3.12/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:219: 17 warnings
+  /Users/mokara/DEV/ai_cover_letter/.venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:219: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.3/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+app/db/database.py:22
+  /Users/mokara/DEV/ai_cover_letter/app/db/database.py:22: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+.venv/lib/python3.12/site-packages/pydantic/fields.py:792
+.venv/lib/python3.12/site-packages/pydantic/fields.py:792
+.venv/lib/python3.12/site-packages/pydantic/fields.py:792
+.venv/lib/python3.12/site-packages/pydantic/fields.py:792
+.venv/lib/python3.12/site-packages/pydantic/fields.py:792
+.venv/lib/python3.12/site-packages/pydantic/fields.py:792
+.venv/lib/python3.12/site-packages/pydantic/fields.py:792
+  /Users/mokara/DEV/ai_cover_letter/.venv/lib/python3.12/site-packages/pydantic/fields.py:792: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'example'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.3/migration/
+    warn(
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: Type google._upb._message.MessageMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
+
+<frozen importlib._bootstrap>:488
+  <frozen importlib._bootstrap>:488: DeprecationWarning: Type google._upb._message.ScalarMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
+
+.venv/lib/python3.12/site-packages/PyPDF2/__init__.py:21
+  /Users/mokara/DEV/ai_cover_letter/.venv/lib/python3.12/site-packages/PyPDF2/__init__.py:21: DeprecationWarning: PyPDF2 is deprecated. Please move to the pypdf library instead.
+    warnings.warn(
+
+.venv/lib/python3.12/site-packages/passlib/utils/__init__.py:854
+  /Users/mokara/DEV/ai_cover_letter/.venv/lib/python3.12/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+app/tests/test_cover_letters.py::test_create_cover_letter
+  /Users/mokara/DEV/ai_cover_letter/.venv/lib/python3.12/site-packages/httpx/_client.py:680: DeprecationWarning: The 'app' shortcut is now deprecated. Use the explicit style 'transport=WSGITransport(app=...)' instead.
+    warnings.warn(message, DeprecationWarning)
+
+app/tests/test_cover_letters.py::test_create_cover_letter
+  /Users/mokara/DEV/ai_cover_letter/.venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = timegm(datetime.utcnow().utctimetuple())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED app/tests/test_cover_letters.py::test_create_cover_letter - assert 500...
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+======================== 1 failed, 32 warnings in 3.75s ========================

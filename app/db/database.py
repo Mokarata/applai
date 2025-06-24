@@ -1,22 +1,17 @@
 """
 Database configuration and session management
 """
+# SQLAlchemy components - Database toolkit
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from dotenv import load_dotenv
-import os
+from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Load environment variables
-load_dotenv()
-
-# Database configuration
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
+# Application configuration - Central settings
+from app.core.config import settings
 
 # Create engine
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False} if SQLALCHEMY_DATABASE_URL.startswith("sqlite") else {} 
+    settings.DATABASE_URL,
+    connect_args={"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {} 
 )
 
 # Create session

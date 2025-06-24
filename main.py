@@ -6,11 +6,11 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
 # Application-specific imports - Local modules
 from app.api import api_router
 from app.core.logging import get_logger
+from app.core.config import settings
 
 # Get a logger for the main module
 logger = get_logger(__name__)
@@ -23,13 +23,13 @@ async def lifespan(app: FastAPI):
     # Shutdown logic
     logger.info("Application shutting down")
 
-app = FastAPI(title="AI Cover Letter Generator", lifespan=lifespan)
+app = FastAPI(title=settings.PROJECT_NAME, lifespan=lifespan)
 
 # Define base directory
 BASE_DIR = Path(__file__).resolve().parent
 
 # Mount static files
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "app" / "static")), name="static")
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 # Include API router
 app.include_router(api_router, prefix="/api")
@@ -37,7 +37,7 @@ app.include_router(api_router, prefix="/api")
 # UI route
 @app.get("/ui", response_class=HTMLResponse)
 async def read_ui(request: Request):
-    with open(BASE_DIR / "app" / "static" / "index.html") as f:
+    with open(BASE_DIR / "static" / "index.html") as f:
         html_content = f.read()
     return HTMLResponse(content=html_content)
 

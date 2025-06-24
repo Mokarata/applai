@@ -12,7 +12,7 @@ def read_job_data(file_path):
         return file.read()
 
 # Get job data from your sample file
-job_file = Path("resources/jobs/raw/job_01.md")
+job_file = Path("resources/jobs/job_01.md")
 job_data = read_job_data(job_file)
 
 # Create payload: only essential fields

@@ -2,12 +2,14 @@ from app.schemas.user import UserBase, UserCreate, UserResponse
 from app.schemas.job import JobBase, JobCreate, JobResponse
 from app.schemas.cover_letter import CoverLetterBase, CoverLetterCreate, CoverLetterResponse
 from datetime import datetime
+from app.db.models import JobSourceType
 
 def test_user_schemas():
     # Test UserBase
     user_data = {
         "name": "John",
         "surname": "Doe",
+        "user_name": "johndoe",
         "email": "john.doe@example.com",
         "cv_text": "Experienced developer"
     }
@@ -20,28 +22,38 @@ def test_user_schemas():
     print(f"UserCreate validated: {user_create.model_dump()}")
     
     # Test UserResponse
-    user_response_data = {**user_data, "id": 1, "is_active": True}
+    user_response_data = {**user_data, "id": 1, "is_active": True, "is_admin": False}
     user_response = UserResponse(**user_response_data)
     print(f"UserResponse validated: {user_response.model_dump()}")
 
 def test_job_schemas():
     # Test JobBase
-    job_data = {
-        "title": "Software Developer",
-        "job_data": "Raw job offer data",
-        "company": "Tech Corp",
-        "location": "Remote"
+    job_base_data = {
+        "source_data": {
+            "type": JobSourceType.text,
+            "original_value": "Software Engineer at Google"
+        },
+        "status": "pending"
     }
-    job = JobBase(**job_data)
+    job = JobBase(**job_base_data)
     print(f"JobBase validated: {job.model_dump()}")
-    
-    # Test JobCreate - Add user_id which is required by JobCreate schema
-    job_create_data = {**job_data, "user_id": 1}
+
+    # Test JobCreate
+    job_create_data = {
+        "source_type": JobSourceType.text,
+        "source_value": "Software Engineer at Google"
+    }
     job_create = JobCreate(**job_create_data)
     print(f"JobCreate validated: {job_create.model_dump()}")
-    
+
     # Test JobResponse
-    job_response_data = {**job_data, "id": 1, "user_id": 1}
+    job_response_data = {
+        **job_base_data,
+        "id": 1,
+        "user_id": 1,
+        "time_created": datetime.now(),
+        "time_updated": datetime.now()
+    }
     job_response = JobResponse(**job_response_data)
     print(f"JobResponse validated: {job_response.model_dump()}")
 
