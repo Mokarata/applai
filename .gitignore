@@ -6,7 +6,7 @@
 !.env.example
 
 # 2. Database files
-app.db
+*.db
 *.sqlite3
 
 # 3. Python cache & build artifacts
@@ -43,3 +43,7 @@ Info.md
 
 # 9. Ignore resources/private data (optional, if you add user data)
 # resources/**/private*
+
+# 10. Alembic
+# The alembic/versions directory contains crucial migration scripts and MUST be tracked.
+# Other generated files like caches are already covered by __pycache__/.
