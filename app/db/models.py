@@ -1,25 +1,29 @@
 # SQLAlchemy - Database ORM components
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, JSON, Text, Enum
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
-
 # Python standard library - Core language functionality
 import enum
 
+from sqlalchemy import (JSON, Boolean, Column, DateTime, Enum, ForeignKey,
+                        Integer, String, Text)
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
 # Local application imports - Database connection
 from .database import Base
+
 
 # --- User Model ---
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    surname = Column(String, index=True)
+    name = Column(String, index=True, nullable=False)
+    surname = Column(String, index=True, nullable=False)
     user_name = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    cv_text = Column(String)
+    cv_text = Column(String, nullable=True)
+    cv_source_metadata = Column(JSON, nullable=True)
+    structured_cv_data = Column(JSON, nullable=True)
     contact_info = Column(JSON, nullable=True)
     is_active = Column(Boolean, default=True, server_default="true", nullable=False)
     is_admin = Column(Boolean, default=False, server_default="false", nullable=False)
@@ -30,13 +34,6 @@ class User(Base):
 
 
 # --- Job Model ---
-# Define an Enum for the source type
-class JobSourceType(enum.Enum):
-    url = "url"
-    file = "file"
-    text = "text"
-    manual = "manual"
-
 class Job(Base):
     __tablename__ = "jobs"
 
@@ -47,19 +44,24 @@ class Job(Base):
 
     # --- Source Information ---
     source_data = Column(JSON, nullable=False)
-    raw_text = Column(Text, nullable=True) # Dedicated column for processed text
+    raw_text = Column(Text, nullable=True)  # Dedicated column for processed text
 
     # --- Extracted/Structured Information (Populated after Gemini processing) ---
     extracted_data = Column(JSON, nullable=True)
 
-     # --- Timestamps ---
+    # --- Timestamps ---
     time_created = Column(DateTime(timezone=True), server_default=func.now())
-    time_updated = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now()) # Added server_default
-    
+    time_updated = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )  # Added server_default
+
     # --- Relationships ---
     company = relationship("Company", back_populates="jobs")
     user = relationship("User", back_populates="jobs")
-    cover_letters = relationship("CoverLetter", back_populates="job", cascade="all, delete-orphan")
+    cover_letters = relationship(
+        "CoverLetter", back_populates="job", cascade="all, delete-orphan"
+    )
+
 
 # --- Company Model ---
 class Company(Base):
@@ -73,10 +75,13 @@ class Company(Base):
 
     # --- Timestamps ---
     time_created = Column(DateTime(timezone=True), server_default=func.now())
-    time_updated = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    time_updated = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
     # --- Relationships ---
     jobs = relationship("Job", back_populates="company")
+
 
 # --- CoverLetter Model ---
 class CoverLetter(Base):
@@ -91,7 +96,9 @@ class CoverLetter(Base):
 
     # --- Timestamps ---
     time_created = Column(DateTime(timezone=True), server_default=func.now())
-    time_updated = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    time_updated = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
     # --- Relationships ---
     user_id = Column(Integer, ForeignKey("users.id"))

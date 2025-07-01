@@ -1,25 +1,25 @@
-import requests
 import json
 import os
 from pathlib import Path
 
+import requests
+
 # API endpoint
 API_URL = "http://127.0.0.1:8000/api/jobs/"
 
+
 # Function to read job data from file
 def read_job_data(file_path):
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
         return file.read()
+
 
 # Get job data from your sample file
 job_file = Path("resources/jobs/job_01.md")
 job_data = read_job_data(job_file)
 
 # Create payload: only essential fields
-payload = {
-    "job_data": job_data,
-    "user_id": 1
-}
+payload = {"job_data": job_data, "user_id": 1}
 
 # Print payload for debugging
 print("Sending payload:")

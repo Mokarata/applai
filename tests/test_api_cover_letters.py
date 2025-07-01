@@ -1,6 +1,7 @@
+from unittest.mock import MagicMock
+
 import pytest
 from httpx import AsyncClient
-from unittest.mock import MagicMock
 
 from app.db.models import Job, User
 from app.schemas.cover_letter import CoverLetterStructure
@@ -23,9 +24,7 @@ async def test_create_cover_letter(
     )
     mock_llm_service.generate_structured_output.return_value = mock_letter_structure
 
-    request_data = {
-        "generation_options": {"length": "medium", "style": "professional"}
-    }
+    request_data = {"generation_options": {"length": "medium", "style": "professional"}}
     params = {"job_id": test_job.id}
 
     # Act

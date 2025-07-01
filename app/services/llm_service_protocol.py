@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Type, TypeVar, Optional, Dict, Any
+from typing import Any, Dict, Optional, Type, TypeVar
+
 from pydantic import BaseModel
 
 # Define a TypeVar for the Pydantic model, ensuring it's a BaseModel subclass
-T_BaseModel = TypeVar('T_BaseModel', bound=BaseModel)
+T_BaseModel = TypeVar("T_BaseModel", bound=BaseModel)
+
 
 class LLMServiceProtocol(ABC):
     """
@@ -12,7 +14,7 @@ class LLMServiceProtocol(ABC):
     for generating structured outputs.
     """
 
-    @abstractmethod 
+    @abstractmethod
     async def generate_text_from_prompt(
         self,
         system_prompt: str,
@@ -35,7 +37,7 @@ class LLMServiceProtocol(ABC):
         """
         raise NotImplementedError("Subclasses must implement this method.")
 
-    @abstractmethod    
+    @abstractmethod
     async def generate_structured_output(
         self,
         system_prompt: str,

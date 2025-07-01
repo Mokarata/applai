@@ -1,6 +1,7 @@
 """
 Prompt module for cover letter generation.
 """
+
 # System prompt defines the AI's role and capabilities
 COVER_LETTER_SYSTEM = """
     You are an expert AI assistant specializing in crafting professional cover letters for software engineers.

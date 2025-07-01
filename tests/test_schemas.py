@@ -1,50 +1,44 @@
-from app.schemas.user import UserBase, UserCreate, UserResponse
-from app.schemas.job import JobBase, JobCreate, JobResponse
-from app.schemas.cover_letter import CoverLetterBase, CoverLetterCreate, CoverLetterResponse
 from datetime import datetime
-from app.db.models import JobSourceType
+
+from app.schemas.cover_letter import (CoverLetterBase, CoverLetterCreate,
+                                      CoverLetterResponse)
+from app.schemas.job import JobBase, JobResponse
+from app.schemas.user import UserBase, UserCreate, UserResponse
+
 
 def test_user_schemas():
-    # Test UserBase
+    """Tests validation for User schemas."""
     user_data = {
         "name": "John",
         "surname": "Doe",
         "user_name": "johndoe",
         "email": "john.doe@example.com",
-        "cv_text": "Experienced developer"
+        "cv_text": "Experienced developer",
     }
     user = UserBase(**user_data)
-    print(f"UserBase validated: {user.model_dump()}")
-    
-    # Test UserCreate
-    user_create_data = {**user_data, "password": "securepassword"}
-    user_create = UserCreate(**user_create_data)
-    print(f"UserCreate validated: {user_create.model_dump()}")
-    
-    # Test UserResponse
-    user_response_data = {**user_data, "id": 1, "is_active": True, "is_admin": False}
-    user_response = UserResponse(**user_response_data)
-    print(f"UserResponse validated: {user_response.model_dump()}")
+    assert user.email == "john.doe@example.com"
+
+    user_create = UserCreate(**{**user_data, "password": "securepassword"})
+    assert user_create.password == "securepassword"
+
+    user_response = UserResponse(
+        **{**user_data, "id": 1, "is_active": True, "is_admin": False}
+    )
+    assert user_response.id == 1
+
 
 def test_job_schemas():
-    # Test JobBase
+    """Tests validation for the refactored Job schemas."""
+    # Test JobBase with the new source-agnostic structure
     job_base_data = {
-        "source_data": {
-            "type": JobSourceType.text,
-            "original_value": "Software Engineer at Google"
-        },
-        "status": "pending"
+        "source_data": {"source": "http://example.com", "filename": "job.html"},
+        "raw_text": "Job description text",
+        "status": "pending",
     }
     job = JobBase(**job_base_data)
-    print(f"JobBase validated: {job.model_dump()}")
-
-    # Test JobCreate
-    job_create_data = {
-        "source_type": JobSourceType.text,
-        "source_value": "Software Engineer at Google"
-    }
-    job_create = JobCreate(**job_create_data)
-    print(f"JobCreate validated: {job_create.model_dump()}")
+    assert job.status == "pending"
+    assert job.source_data is not None
+    assert job.source_data["source"] == "http://example.com"
 
     # Test JobResponse
     job_response_data = {
@@ -52,40 +46,34 @@ def test_job_schemas():
         "id": 1,
         "user_id": 1,
         "time_created": datetime.now(),
-        "time_updated": datetime.now()
+        "time_updated": datetime.now(),
     }
     job_response = JobResponse(**job_response_data)
-    print(f"JobResponse validated: {job_response.model_dump()}")
+    assert job_response.id == 1
+    assert job_response.raw_text == "Job description text"
+
 
 def test_cover_letter_schemas():
+    """Tests validation for CoverLetter schemas."""
     # Test CoverLetterBase
-    cover_letter_data = {
-        "template_name": "Standard",
-        "cover_letter_text": "Dear Hiring Manager..."
-    }
-    cover_letter = CoverLetterBase(**cover_letter_data)
-    print(f"CoverLetterBase validated: {cover_letter.model_dump()}")
-    
-    # Test CoverLetterCreate
-    cover_letter_create = CoverLetterCreate(**cover_letter_data)
-    print(f"CoverLetterCreate validated: {cover_letter_create.model_dump()}")
-    
-    # Test CoverLetterResponse
-    cover_letter_response_data = {
-        **cover_letter_data, 
-        "id": 1, 
-        "user_id": 1, 
-        "job_id": 1,
-        "time_created": datetime.now()
-    }
-    cover_letter_response = CoverLetterResponse(**cover_letter_response_data)
-    print(f"CoverLetterResponse validated: {cover_letter_response.model_dump()}")
+    base_data = {"title": "My Title", "text": "Dear Hiring Manager..."}
+    cover_letter_base = CoverLetterBase(**base_data)
+    assert cover_letter_base.title == "My Title"
+    assert cover_letter_base.text == "Dear Hiring Manager..."
 
-if __name__ == "__main__":
-    print("Testing User Schemas...")
-    test_user_schemas()
-    print("\nTesting Job Schemas...")
-    test_job_schemas()
-    print("\nTesting Cover Letter Schemas...")
-    test_cover_letter_schemas()
-    print("\nAll schemas validated successfully!")
+    # Test CoverLetterCreate
+    create_data = {"generation_options": {"style": "creative"}}
+    cover_letter_create = CoverLetterCreate(**create_data)
+    assert cover_letter_create.generation_options.style == "creative"
+
+    # Test CoverLetterResponse
+    response_data = {
+        **base_data,
+        "id": 1,
+        "user_id": 1,
+        "job_id": 1,
+        "time_created": datetime.now(),
+    }
+    cover_letter_response = CoverLetterResponse(**response_data)
+    assert cover_letter_response.id == 1
+    assert cover_letter_response.title == "My Title"

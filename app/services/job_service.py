@@ -1,106 +1,131 @@
 # Python standard library - Core language functionality
-import base64
-import binascii
-from typing import Optional, Dict, Any, List
-from datetime import datetime
+from typing import List, Optional
 
 # FastAPI and database components - Web and persistence layers
-from fastapi import HTTPException, status, UploadFile, BackgroundTasks
+from fastapi import BackgroundTasks, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-# Application-specific imports - Models, schemas and services
-from app.db import User, Job, JobSourceType, Company, get_db
 from app.core import get_logger
-from app.schemas import (
-    JobCreate,
-    JobUpdate,
-    JobSourceData,
-    JobExtractedData,
-    CompanyCreate
-)
-from app.utils.text_processing import source_to_text
-from .llm_service_protocol import LLMServiceProtocol
-from .company_service import CompanyService
+# Application-specific imports - Models, schemas and services
+from app.db import Company, Job, User, get_db
+from app.schemas import CompanyCreate, JobCreate, JobExtractedData, JobUpdate
+from app.utils.data_loader import process_source_to_markdown
 from resources.prompts import JOB_EXTRACTION_SYSTEM, JOB_EXTRACTION_USER
+
+from .company_service import CompanyService
+from .llm_service_protocol import LLMServiceProtocol
 
 logger = get_logger(__name__)
 
+
 class JobService:
     def __init__(
-        self, 
-        db: Session, 
-        llm_service: LLMServiceProtocol, 
-        company_service: CompanyService, 
-        background_tasks: BackgroundTasks
+        self,
+        db: Session,
+        llm_service: LLMServiceProtocol,
+        company_service: CompanyService,
+        background_tasks: BackgroundTasks,
     ):
         self.db = db
         self.llm_service = llm_service
         self.company_service = company_service
         self.background_tasks = background_tasks
 
-    def _get_user(self, user_id: int) -> User:
-        """Helper to get user or raise 404."""
-        user = self.db.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
-        return user
-
     def _authorize_job_access(self, job: Job, current_user: User):
         """Helper to authorize if a user can access a job."""
         if job.user_id != current_user.id and not current_user.is_admin:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to access this job."
+                detail="You do not have permission to access this job.",
             )
 
-    async def create_job(
-        self, 
-           *, 
-        user_id: int, 
-        job_in: JobCreate, 
-        file: Optional[UploadFile] = None
+    async def create_job_from_source(
+        self,
+        *,
+        current_user: User,
+        source_text: Optional[str] = None,
+        source_url: Optional[str] = None,
+        source_file: Optional[UploadFile] = None,
     ) -> Job:
-        """ 
-        Creates a new job, processes the source, and enriches the data.
         """
-        logger.info(f"Unified job creation for user {user_id} from source: {job_in.source_type.value}")
+        Validates raw sources, processes the valid source to markdown,
+        and creates a new job.
+        """
+        # Validate that exactly one source is provided
+        sources = [source_text, source_url, source_file]
+        if sum(s is not None for s in sources) != 1:
+            logger.warning(
+                f"Job creation failed for user {current_user.id}: Incorrect number of sources provided."
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Exactly one of source_text, source_url, or source_file must be provided.",
+            )
 
-        # 1. Prepare JobSourceData
-        source_data_schema = JobSourceData(
-            type=job_in.source_type,
-            original_value=job_in.source_value,
-            filename=job_in.source_filename,
-            mime_type=job_in.source_mime_type
+        source_to_process = source_file or source_url or source_text
+
+        logger.info(f"Processing source for job creation for user {current_user.id}.")
+        try:
+            processed_source = await process_source_to_markdown(source_to_process)
+        except Exception as e:
+            logger.error(
+                f"Failed to process source for user {current_user.id}. Error: {e}", exc_info=True
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to process the provided source.",
+            ) from e
+
+        if not processed_source or not processed_source.markdown_content:
+            logger.warning(
+                f"Job creation failed for user {current_user.id}: Failed to extract content from source."
+            )
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Failed to extract content from the provided source.",
+            )
+
+        job_in = JobCreate(
+            source_data=processed_source.metadata,
+            raw_text=processed_source.markdown_content,
         )
 
-        # 2. Extract text content from the source
-        file_content_bytes = await file.read() if file else None
-        clean_text = await source_to_text(source_data_schema, file_content_bytes)
-        if not clean_text:
-            raise HTTPException(status_code=400, detail="Could not extract text from the provided source.")
+        # Call the original method to create the job in the DB
+        return await self.create_job(current_user=current_user, job_in=job_in)
 
-        # 3. Create initial Job in DB
-        db_job = Job(
-            user_id=user_id,
-            source_data=source_data_schema.model_dump(),
-            raw_text=clean_text, # Save processed text to the dedicated column
-            status="processing"
-        )
-        self.db.add(db_job)
-        self.db.commit()
-        self.db.refresh(db_job)
+    async def create_job(self, *, current_user: User, job_in: JobCreate) -> Job:
+        """
+        Creates a new job from a JobCreate schema and queues it for enrichment.
+        """
+        logger.info(f"Creating job for user {current_user.id} from processed data.")
+
+        # Explicitly create the Job object to prevent mass assignment vulnerabilities.
+        # Only fields from JobCreate are used, and user_id/status are set securely.
+        try:
+            db_job = Job(
+                user_id=current_user.id,
+                source_data=job_in.source_data,
+                raw_text=job_in.raw_text,
+                status="processing",  # This job is ready for background enrichment
+            )
+            self.db.add(db_job)
+            self.db.commit()
+            self.db.refresh(db_job)
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            logger.error(
+                f"Database error creating job for user {current_user.id}: {e}", exc_info=True
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Could not create job in the database.",
+            ) from e
 
         logger.info(f"Job {db_job.id} created, starting background processing.")
 
-        # 4. Add LLM job processing to background tasks
-        self.background_tasks.add_task(
-            self.process_job, 
-            job_id=db_job.id
-        )
+        # Add LLM job processing to background tasks
+        self.background_tasks.add_task(self.process_job, job_id=db_job.id)
 
         return db_job
 
@@ -122,29 +147,34 @@ class JobService:
                     system_prompt=JOB_EXTRACTION_SYSTEM,
                     user_prompt=JOB_EXTRACTION_USER,
                     output_schema=JobExtractedData,
-                    input_vars={"job_details": job.raw_text}
+                    input_vars={"job_details": job.raw_text},
                 )
                 if not extracted_data or not extracted_data.company_name:
-                    raise ValueError("LLM failed to extract company name or essential details.")
+                    raise ValueError(
+                        "LLM failed to extract company name or essential details."
+                    )
 
                 # --- Link or Create Company ---
-                # This now handles getting an existing company or creating a new one
-                # and automatically triggers the analysis task for new companies.
-                company = self.company_service.create_company(
-                    name=extracted_data.company_name, 
-                    background_tasks=self.background_tasks
+                # Use the background task's own DB session to create a fresh service
+                # instance, ensuring the database operations are safe.
+                company_service_bg = CompanyService(db=db, llm_service=self.llm_service)
+                company = company_service_bg.create_company(
+                    name=extracted_data.company_name,
+                    background_tasks=self.background_tasks,
                 )
                 job.company_id = company.id
 
                 # Merge LLM data into job's extracted_data
                 existing_extracted = job.extracted_data or {}
-                new_extracted = extracted_data.model_dump(exclude_none=True)
+                new_extracted = extracted_data.model_dump(mode="json", exclude_none=True)
                 existing_extracted.update(new_extracted)
                 job.extracted_data = existing_extracted
                 job.status = "completed"
-                
+
                 db.commit()
-                logger.info(f"Successfully processed job {job_id} and linked company {company.id}.")
+                logger.info(
+                    f"Successfully processed job {job_id} and linked company {company.id}."
+                )
 
             except Exception as e:
                 logger.error(f"Error processing job {job_id}: {e}", exc_info=True)
@@ -159,12 +189,16 @@ class JobService:
         logger.info(f"Fetching job {job_id} for user {current_user.id}")
         job = self.db.query(Job).filter(Job.id == job_id).first()
         if not job:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
-        
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Job not found"
+            )
+
         self._authorize_job_access(job, current_user)
         return job
 
-    def get_jobs(self, user_id: Optional[int] = None, skip: int = 0, limit: int = 100) -> List[Job]:
+    def get_jobs(
+        self, user_id: Optional[int] = None, skip: int = 0, limit: int = 100
+    ) -> List[Job]:
         """Retrieve a list of jobs, optionally filtered by user_id."""
         filters = []
         if user_id:
@@ -173,7 +207,9 @@ class JobService:
 
     def update_job(self, job_id: int, job_in: JobUpdate, current_user: User) -> Job:
         """Updates a job's details after authorization."""
-        job = self.get_job_by_id(job_id=job_id, current_user=current_user) # This already performs the auth check
+        job = self.get_job_by_id(
+            job_id=job_id, current_user=current_user
+        )  # This already performs the auth check
 
         update_data = job_in.model_dump(exclude_unset=True)
         for field, value in update_data.items():
@@ -185,7 +221,9 @@ class JobService:
 
     def delete_job(self, job_id: int, current_user: User):
         """Deletes a job after authorization."""
-        job = self.get_job_by_id(job_id=job_id, current_user=current_user) # This already performs the auth check
+        job = self.get_job_by_id(
+            job_id=job_id, current_user=current_user
+        )  # This already performs the auth check
         self.db.delete(job)
         self.db.commit()
         logger.info(f"Successfully deleted job {job_id}")

@@ -54,9 +54,13 @@ def update_company(
 ) -> CompanyResponse:
     """Update a company's information."""
     logger.info(f"User {current_user.id} updating company {company_id}.")
-    company = company_service.update_company(company_id=company_id, company_in=company_in)
+    company = company_service.update_company(
+        company_id=company_id, company_in=company_in
+    )
     if not company:
-        logger.warning(f"Company {company_id} not found for update by user {current_user.id}.")
+        logger.warning(
+            f"Company {company_id} not found for update by user {current_user.id}."
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Company not found"
         )
@@ -73,9 +77,10 @@ def delete_company(
     logger.info(f"User {current_user.id} deleting company {company_id}.")
     company = company_service.delete_company(company_id=company_id)
     if not company:
-        logger.warning(f"Company {company_id} not found for deletion by user {current_user.id}.")
+        logger.warning(
+            f"Company {company_id} not found for deletion by user {current_user.id}."
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Company not found"
         )
     return
-

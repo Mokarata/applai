@@ -10,6 +10,7 @@ sys.path.append(PROJECT_ROOT)
 from app.db.database import SessionLocal
 from app.db.models import User
 
+
 def toggle_user_admin_status(user_id: int):
     """Toggles the admin status of the user with the given email."""
     db = SessionLocal()
@@ -34,9 +35,14 @@ def toggle_user_admin_status(user_id: int):
     finally:
         db.close()
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Toggle a user's admin status (promote to admin or demote to normal user).")
-    parser.add_argument("user_id", type=int, help="The ID of the user whose admin status to toggle.")
+    parser = argparse.ArgumentParser(
+        description="Toggle a user's admin status (promote to admin or demote to normal user)."
+    )
+    parser.add_argument(
+        "user_id", type=int, help="The ID of the user whose admin status to toggle."
+    )
     args = parser.parse_args()
 
     toggle_user_admin_status(args.user_id)

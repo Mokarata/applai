@@ -1,21 +1,37 @@
-""" Schemas for company data management."""
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
-from typing import Optional
+"""Schemas for company data management."""
+
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+
 
 # --- Address Schema (can be shared or specific to Company) ---
 class CompanyAddress(BaseModel):
-    """ Schema for company address details."""
-    street: Optional[str] = Field(None, description="Street address", json_schema_extra={"example": "123 Main St"})
-    city: Optional[str] = Field(None, description="City", json_schema_extra={"example": "San Francisco"})
-    state: Optional[str] = Field(None, description="State or Province", json_schema_extra={"example": "CA"})
-    zip_code: Optional[str] = Field(None, description="Zip or Postal Code", json_schema_extra={"example": "94107"})
-    country: Optional[str] = Field(None, description="Country", json_schema_extra={"example": "USA"})
+    """Schema for company address details."""
+
+    street: Optional[str] = Field(
+        None, description="Street address", json_schema_extra={"example": "123 Main St"}
+    )
+    city: Optional[str] = Field(
+        None, description="City", json_schema_extra={"example": "San Francisco"}
+    )
+    state: Optional[str] = Field(
+        None, description="State or Province", json_schema_extra={"example": "CA"}
+    )
+    zip_code: Optional[str] = Field(
+        None, description="Zip or Postal Code", json_schema_extra={"example": "94107"}
+    )
+    country: Optional[str] = Field(
+        None, description="Country", json_schema_extra={"example": "USA"}
+    )
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class ContactInfo(BaseModel):
-    """ Schema for company contact details."""
+    """Schema for company contact details."""
+
     address: Optional[CompanyAddress] = None
     email: Optional[str] = Field(None, description="Company email address")
     phone: Optional[str] = Field(None, description="Company phone number")
@@ -23,10 +39,12 @@ class ContactInfo(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class CompanyAnalytics(BaseModel):
-    """ Schema for company enrichment data intended to be used for better LLM responses."""
+    """Schema for company enrichment data intended to be used for better LLM responses."""
+
     core_business: Optional[str] = Field(
-        None, 
+        None,
         description="""Business/Industry: 
             What the company does and the sector they operate in.
             Why: Helps the LLM use industry-specific terminology, understand the problems they solve, and tailor the applicant's impact to that domain.
@@ -35,8 +53,8 @@ class CompanyAnalytics(BaseModel):
             "Leading SaaS provider for project management",
             "Pioneer in renewable energy solutions",
             "Global automotive technology supplier",
-            "E-commerce platform for sustainable products"
-        ]
+            "E-commerce platform for sustainable products",
+        ],
     )
     vision: Optional[str] = Field(
         None,
@@ -47,8 +65,8 @@ class CompanyAnalytics(BaseModel):
         examples=[
             "To make transportation safer and more accessible for everyone",
             "Empowering businesses through intelligent data insights",
-            "Creating a sustainable future through innovative engineering"
-        ]
+            "Creating a sustainable future through innovative engineering",
+        ],
     )
     core_values: Optional[str] = Field(
         None,
@@ -59,8 +77,8 @@ class CompanyAnalytics(BaseModel):
         examples=[
             "Innovation, Collaboration, Integrity",
             "Customer-centric, Agile, Sustainable",
-            "Excellence, Responsibility, Pioneering"
-        ]
+            "Excellence, Responsibility, Pioneering",
+        ],
     )
     key_products: Optional[str] = Field(
         None,
@@ -71,10 +89,10 @@ class CompanyAnalytics(BaseModel):
                 and believe my skills in [Skill Y] would directly contribute to its continued success."
         """,
         examples=[
-            "Their flagship product, 'DataFlow Pro'," 
-            "Their recent work on AI-powered predictive maintenance," 
+            "Their flagship product, 'DataFlow Pro',"
+            "Their recent work on AI-powered predictive maintenance,"
             "The development of their new mobile banking app."
-        ]
+        ],
     )
     culture: Optional[str] = Field(
         None,
@@ -85,45 +103,75 @@ class CompanyAnalytics(BaseModel):
         examples=[
             "Highly collaborative environment",
             "Fast-paced and innovative culture",
-            "Strong focus on work-life balance and employee well-being"
-        ]
+            "Strong focus on work-life balance and employee well-being",
+        ],
     )
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class CompanyLLMResponse(BaseModel):
-    """ Schema for company LLM response."""
-    contact_info: Optional[ContactInfo] = Field(None, description="Company contact details")
-    analytics: Optional[CompanyAnalytics] = Field(None, description="Company analytics enrichment data")
-    
+    """Schema for company LLM response."""
+
+    contact_info: Optional[ContactInfo] = Field(
+        None, description="Company contact details"
+    )
+    analytics: Optional[CompanyAnalytics] = Field(
+        None, description="Company analytics enrichment data"
+    )
+
     model_config = ConfigDict(from_attributes=True)
-    
+
+
 # --- Base Company Schema ---
 class CompanyBase(BaseModel):
-    """ Base schema for company data."""
-    name: str = Field(..., description="Company name", json_schema_extra={"example": "Innovatech Solutions Inc."})
-    contact_info: Optional[ContactInfo] = Field(None, description="Company contact details")
-    analytics: Optional[CompanyAnalytics] = Field(None, description="Company analytics enrichment data")
-    
+    """Base schema for company data."""
+
+    name: str = Field(
+        ...,
+        description="Company name",
+        json_schema_extra={"example": "Innovatech Solutions Inc."},
+    )
+    contact_info: Optional[ContactInfo] = Field(
+        None, description="Company contact details"
+    )
+    analytics: Optional[CompanyAnalytics] = Field(
+        None, description="Company analytics enrichment data"
+    )
+
     model_config = ConfigDict(from_attributes=True)
+
 
 # --- Schema for Creating a Company ---
 class CompanyCreate(CompanyBase):
-    """ Schema used when creating a new company."""
-    name: str = Field(..., description="Company name", json_schema_extra={"example": "Innovatech Solutions Inc."})
+    """Schema used when creating a new company."""
+
+    name: str = Field(
+        ...,
+        description="Company name",
+        json_schema_extra={"example": "Innovatech Solutions Inc."},
+    )
+
 
 # --- Schema for Updating a Company ---
 class CompanyUpdate(BaseModel):
-    """ Schema for updating an existing company. All fields are optional."""
+    """Schema for updating an existing company. All fields are optional."""
+
     name: Optional[str] = Field(None, description="Company name")
-    contact_info: Optional[ContactInfo] = Field(None, description="Company contact details")
-    analytics: Optional[CompanyAnalytics] = Field(None, description="Company analytics enrichment data")
+    contact_info: Optional[ContactInfo] = Field(
+        None, description="Company contact details"
+    )
+    analytics: Optional[CompanyAnalytics] = Field(
+        None, description="Company analytics enrichment data"
+    )
 
     model_config = ConfigDict(from_attributes=True)
 
+
 # --- Schema for Company Response (includes DB-generated fields) ---
 class CompanyResponse(CompanyBase):
-    """ Schema for representing a company in API responses."""
+    """Schema for representing a company in API responses."""
+
     id: int
     time_created: datetime
     time_updated: datetime
