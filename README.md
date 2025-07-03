@@ -7,9 +7,7 @@ This project was developed as a learning exercise to explore modern backend tech
 ## Architectural Highlights
 
 -   **Protocol-Driven LLM Services**: The core of the application is a protocol-driven service layer (`LLMServiceProtocol`). This allows for hot-swapping LLM providers (Gemini, OpenAI, Groq) via a single configuration setting, without changing any application code. Each service adheres to the same interface for generating both plain text and structured, Pydantic-validated output.
-
--   **Asynchronous Job Processing**: Job submissions (from text, URLs, or files) are handled by background tasks, ensuring the API remains responsive. The LLM performs data extraction and analysis without blocking user requests.
-
+-   **Backend API Logic**: The application is structured as a FastAPI application, with endpoints for user management, job management, and AI service integration.
 -   **Configuration-First Design**: The application is configured entirely through environment variables, managed by Pydantic's `BaseSettings`. This includes a master switch (`ACTIVE_LLM_SERVICE`) to select the AI provider.
 
 ## Core Features
