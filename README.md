@@ -6,17 +6,15 @@ This project was developed as a learning exercise to explore modern backend tech
 
 ## Key Features & Architecture
 
-This project is built on a clean, layered architecture that emphasizes separation of concerns and modularity, making it both scalable and maintainable.
+This project features a clean, layered architecture that emphasizes separation of concerns and modularity.
 
--   **Distinct API and Service Layers**: The application is clearly divided into two main layers:
-    -   The **API Layer**, built with **FastAPI**, is responsible for handling all incoming HTTP requests, routing, and data validation.
-    -   The **Service Layer** contains all the core business logic. It orchestrates database operations, manages user and job data, and interacts with the AI models. This separation ensures that the API layer remains lean and focused on communication, while the complex logic is encapsulated within the services.
+-   **API & Service Layers**: The application is divided into two main layers:
+    -   **API Layer**: Handles incoming HTTP requests, routing, and data validation using **FastAPI**.
+    -   **Service Layer**: Orchestrates database operations, manages user and job data, and interacts with the AI models.
 
--   **Protocol-Driven LLM Services**: At the heart of the AI integration is the `LLMServiceProtocol`. This powerful design pattern defines a standard interface for all AI providers (like Gemini, OpenAI, or Groq). It allows the application to switch between different LLMs via a single configuration change, without altering any code. This makes the system incredibly flexible and easy to extend with new AI models in the future.
+-   **Protocol-Driven LLM Services**: The **LLMServiceProtocol** defines a standard interface for all AI providers (like Gemini, OpenAI, or Groq). This makes the system incredibly flexible and easy to extend with new AI models in the future.
 
--   **Structured Output Handling**: A key challenge with LLMs is getting reliable, structured data. This project solves that by using **Pydantic** models to define the exact output structure required from the AI. This ensures that the data extracted from documents is always consistent, validated, and ready to be used by the application, eliminating unpredictable results.
-
--   **Core Technologies**: The backend is built with a modern stack including **Python 3.12**, **FastAPI** for the API, **SQLAlchemy** and **Alembic** for database management, and **LangChain** for orchestrating LLM interactions.
+-   **Structured Output Handling**: **Pydantic** models ensure consistent, validated output from AI providers.
 
 ## Tech Stack
 
