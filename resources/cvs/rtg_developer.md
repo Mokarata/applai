@@ -1,80 +1,82 @@
-# Realtime Graphics Developer
+# Realtime Graphics Engineer
 
-## Mohamad Kharata
+## Max Bergmann
 
-+49 123 4567890
-Musterstraße 42
-90XXX Nürnberg
-Tel: 0123 4567890
-Email: example@email.com
-Website: https://www.example.com
++49 157 98765432
+Schillerstraße 10
+91XXX Regensburg
+Tel: 0157 98765432
+Email: demo.user@example.com
+Website: https://www.maxbergmann.dev
+LinkedIn: https://linkedin.com/in/max-b-dev
+GitHub: https://github.com/maxbergmann
 
 ### Profil
 
-Leidenschaftlicher Echtzeit-Grafik-Entwickler mit über 3.5 Jahren Praxis Erfahrung in der TV-Broadcast und On-Air Graphics. Ich bin gierig nach neuem Wissen und verfolge den Fortschritt der Computergrafik mit großer Begeisterung. Ich liebe es, im Team kreative Ideen zu verwirklichen und anspruchsvolle Aufgaben zu bewältigen. Dabei kann ich mich gut organisieren und zuverlässig sowie selbstständig arbeiten.
+Engagierter Echtzeit-Grafik-Entwickler mit über 3 Jahren relevanter Erfahrung im Bereich der interaktiven Medien und visuellen Effekte. Ich bin stets bestrebt, mein Wissen zu erweitern und die neuesten Entwicklungen in der Computergrafik-Technologie zu verfolgen. Ich genieße die Zusammenarbeit in agilen Teams, um innovative Lösungen zu entwickeln und komplexe technische Herausforderungen zu meistern. Ich arbeite strukturiert, zuverlässig und kann Aufgaben auch selbstständig vorantreiben.
 
 ## Berufserfahrung
 
-### Realtime Graphics Developer bei v-sion, Berlin
+### Realtime Graphics Engineer bei VisuWorks GmbH, Köln
 
-11/2022—05.2023
+10/2022—04.2023
 
-- Entwicklung & Implementierung grafischer Szenen im Vizartist
-- Programierung grafischer Elemete & Transition Logic
-- Entwicklung & Implementierung von Templates zur Anwendung in Broadcast-Produktion-Workflow
-- Datenbindung
+- Entwicklung und Implementierung komplexer grafischer Szenen in proprietären Echtzeit-Engines.
+- Programmierung interaktiver Grafikelemente und Steuerung von Transitionen.
+- Erstellung und Anpassung von Templates für effiziente Produktions-Workflows in Broadcast-Umgebungen.
+- Integration von externen Datenquellen für dynamische Visualisierungen.
 
-### Realtime Graphics Developer bei Perfect Accident, München
+### Realtime Graphics Specialist bei PixelCraft Studios, Leipzig
 
-08/2018—07/2021
+07/2018—06/2021
 
-- Entwicklung & Implementierung grafischer Szenen (Konzept & Logic, research, Layout & flow, prototype, Build & Animation)
-- Programierung grafischer Elemete & Transition Logic
-- Entwicklung & Implementierung von Templates zur Anwendung in Broadcast-Produktion-Workflow
+- Konzeption, Design und Implementierung grafischer Szenen (inkl. Recherche, Layout, Prototyping, Build und Animation).
+- Entwicklung von visuellen Elementen und Logik für Übergänge in Echtzeit-Anwendungen.
+- Erstellung von wiederverwendbaren Templates für professionelle Medienproduktionen.
 
-## Mentor & Koordinator bei TUM, München
+## Projektkoordinator & Tutor bei TechUni, Dresden
 
-03/2018—07/2018
+02/2018—06/2018
 
-- Organisation & Durchführung von Lernstunden & Gruppengesprächen
-- Beratung & Betreuung ausländischer Student*innen
+- Organisation und Durchführung von Gruppen-Lerneinheiten und Diskussionsrunden.
+- Unterstützung und Beratung internationaler Studierender bei der Integration.
 
 ## Ausbildung
 
-### Informatik / Elektrotechnik, TUM, München
+### Informatik & Medieninformatik, TechUni, Dresden
 
-10/2016—09/2020
+09/2016—08/2020
 
-- Erste praktische Erfahrung mit der Unity Games Engine
+- Erste praktische Erfahrung mit der Unity und Unreal Game Engine.
 
-### Deutsch C2, TestDaF-Institut, München
+### Deutschkenntnisse C2, Sprachinstitut Leipzig
 
-02/2015—07/2016
+01/2015—06/2016
 
-### Information Technology, Universität, Damaskus
+### Computer Science, Nationale Universität, XYZ-Stadt
 
-10/2010—05/2012
+09/2010—04/2012
 
-- Nicht abgeschlossen aufgrund politischer Verfolgung
+- Fundamentale Studien in Informatik, Studium unterbrochen.
 
-### Allgemeine Hochschulreife, Damaskus
+### Allgemeine Hochschulreife, XYZ-Stadt
 
-09/2009—06/2010
+08/2009—05/2010
 
-- Naturwissenschaftlich, GPA 1.3
+- Naturwissenschaftlicher Schwerpunkt, sehr guter Abschluss.
 
 ## Skills
 
-- Real Time Graphics Developer
-- Front-End Web Dev.
-- UI/UX Design
-- Logisches Denken
-- Lösungsorientierung
-- Anpassungsfähigkeit
-- Teamwork
-- Kommunikation
-- Lernfähigkeit
-- Kreatives Denken
+- Real Time Graphics Development
+- Full-Stack Web Development (Frontend-Schwerpunkt)
+- UI/UX Principles
+- Analytical Thinking
+- Solution-Oriented
+- Adaptability
+- Team Collaboration
+- Effective Communication
+- Continuous Learning
+- Creative Problem Solving
 
 ### Tech Stack
 
@@ -89,21 +91,23 @@ Leidenschaftlicher Echtzeit-Grafik-Entwickler mit über 3.5 Jahren Praxis Erfahr
 - Figma
 - Slack
 - Google Workspace
-- Nottion
-- Vs Code
+- Notion
+- VS Code
 - GitHub
 
 Sprachen
 
 - Arabisch (Muttersprachler)
 - Deutsch (Muttersprachler)
-- Englisch (Sehr gute Kenntnisse)
+- Englisch (Verhandlungssicher)
 - Französisch (Grundkenntnisse)
 
 Kurse
 
-- Agiles Projektmanagement bei BFZ
-- UI/UX-Design-Kurs bei careerfoundry
-- AI Engineering 14 Month Masterschool Curse
+- Agiles Projektmanagement – Online-Zertifizierung
+- UI/UX-Design-Grundlagen – Intensivkurs
+- AI Engineering Masterschool – 14-monatiges Programm
 
 Referenzen
+
+- Referenzen auf Anfrage verfügbar.

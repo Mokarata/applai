@@ -1,127 +1,153 @@
-# AI Cover Letter Generator
+# AI Cover Letter Generator (Backend)
 
-## Project Overview
+This project is a backend application designed to streamline the job application process by automatically generating personalized cover letters. It features a provider-agnostic AI service layer, allowing it to integrate with multiple Large Language Models (LLMs) like Google Gemini, OpenAI's GPT, and Groq.
 
-The AI Cover Letter Generator is a FastAPI application designed to help users create personalized and effective cover letters for job applications. The system leverages the power of Google's Gemini large language model to analyze company information, understand job requirements, and generate tailored cover letters based on a user's profile and resume.
+This project was developed as a learning exercise to explore modern backend technologies, API design, and the practical application of a modular, protocol-driven architecture for AI services.
 
-This project serves as a comprehensive portfolio piece demonstrating skills in backend development, AI integration, database management, and API design.
+## Architectural Highlights
 
-### Key Features
+-   **Protocol-Driven LLM Services**: The core of the application is a protocol-driven service layer (`LLMServiceProtocol`). This allows for hot-swapping LLM providers (Gemini, OpenAI, Groq) via a single configuration setting, without changing any application code. Each service adheres to the same interface for generating both plain text and structured, Pydantic-validated output.
 
-- **User Profile Management**: Users can create accounts, manage their personal information, and upload their resume text.
-- **Secure Authentication**: JWT-based authentication ensures that user data is secure and accessible only to the authorized user.
-- **Dynamic Job & Company Management**: Users can add new job applications, which automatically triggers an AI-powered analysis of the target company.
-- **AI-Powered Company Analysis**: The system uses Google Gemini to research the company's website, extracting its core business, vision, and contact information to enrich the data.
-- **Automated Cover Letter Generation**: Generates a personalized cover letter by combining the user's profile, the job description, and the AI-analyzed company data.
-- **Interactive Frontend**: A simple and intuitive frontend allows users to interact with all the core features of the application.
+-   **Asynchronous Job Processing**: Job submissions (from text, URLs, or files) are handled by background tasks, ensuring the API remains responsive. The LLM performs data extraction and analysis without blocking user requests.
+
+-   **Configuration-First Design**: The application is configured entirely through environment variables, managed by Pydantic's `BaseSettings`. This includes a master switch (`ACTIVE_LLM_SERVICE`) to select the AI provider.
+
+## Core Features
+
+-   **Modular LLM Integration**: Supports Google Gemini, OpenAI, and Groq out-of-the-box.
+-   **Secure User Management**: Standard endpoints for user creation, profile updates, and JWT-based authentication.
+-   **Structured Data Extraction**: Uses LangChain and Pydantic parsers to reliably extract structured information (e.g., company details, job skills) from unstructured text.
+-   **Automated Cover Letter Generation**: Merges user data with extracted job details to produce tailored cover letters.
+-   **Database Migrations**: Employs Alembic for robust and version-controlled database schema management.
 
 ## Tech Stack
 
-- **Backend**: FastAPI, Python 3.12
-- **Database**: SQLAlchemy ORM, Alembic for migrations, SQLite (for development)
-- **AI & Machine Learning**: Google Gemini, LangChain
-- **Data Validation**: Pydantic
-- **Testing**: Pytest, HTTPX
-- **API Documentation**: OpenAPI (via FastAPI's /docs)
+-   **Backend**: FastAPI, Python 3.12
+-   **Database**: SQLAlchemy, Alembic, SQLite
+-   **AI & LLM Integration**: LangChain, LangChain-Community, LangChain-Google-Genai, LangChain-OpenAI, LangChain-Groq
+-   **Authentication**: Python-JOSE (JWT), Passlib (Bcrypt)
+-   **Data Validation & Configuration**: Pydantic, Pydantic-Settings
+-   **Dependency Management**: `uv`
+-   **Testing**: Pytest, Pytest-Asyncio
 
 ## Project Structure
 
 ```
 .
 ├── alembic/              # Database migration scripts
+│   └── versions/
 ├── app/
 │   ├── api/              # API endpoints and routing
-│   ├── core/             # Core configuration and settings
-│   ├── db/               # Database models and session management
+│   ├── core/             # Core configuration, settings, and logging
+│   ├── db/               # SQLAlchemy models, session management, and base
 │   ├── schemas/          # Pydantic data validation schemas
-│   └── services/         # Business logic (user, company, AI services)
+│   └── services/         # Business logic (user, job, AI services)
 ├── resources/
 │   └── prompts/          # Prompt templates for the LLM
-├── static/               # Frontend HTML, CSS, and JavaScript files
-├── tests/                # Application tests
+│   └── cover_letters/    # Cover letter templates
+│   └── jobs/             # Job templates
+│   └── cvs/              # CV templates
+├── scripts/              # Utility scripts
+├── tests/                # Unit and integration tests
 ├── .env.example          # Example environment variables file
+├── alembic.ini           # Alembic configuration
 ├── main.py               # Main application entry point
-└── README.md             # Project documentation
+├── pyproject.toml        # Project metadata and dependencies (for UV)
+└── README.md             # This file
 ```
 
-## API Endpoints
+## Endpoints
 
-The application provides a RESTful API for all its core functionalities. The full, interactive API documentation is available at `/docs` when the application is running.
+The full, interactive API documentation (Swagger UI) is available at `http://localhost:8000/docs` when the application is running.
 
-- `POST /token`: Authenticate and receive a JWT access token.
-- `POST /users/`: Create a new user.
-- `GET /users/me`: Retrieve the current authenticated user's profile.
-- `PUT /users/me`: Update the current user's profile.
-- `POST /jobs/`: Create a new job application, which triggers company analysis.
-- `POST /cover-letters/`: Generate a new cover letter for a user and job.
+-   **Auth**: 
+    `/api/auth/token` 
+-   **Users**: 
+    `/api/users/` (POST, GET)
+    `/api/users/me` (GET, PUT)
+    `/api/users/{user_id}` (GET)
+    `/api/users/{user_id}` (PUT)
+    `/api/users/{user_id}` (DELETE)
+-   **Jobs**: 
+    `/api/jobs/` (POST, GET)
+    `/api/jobs/{job_id}` (GET)
+    `/api/jobs/{job_id}` (PUT)
+    `/api/jobs/{job_id}` (DELETE)
+-   **Cover Letters**: 
+    `/api/cover-letters/generate` (POST)
+    `/api/cover-letters/{cover_letter_id}` (GET)
+    `/api/cover-letters/{cover_letter_id}` (PUT)
+    `/api/cover-letters/{cover_letter_id}` (DELETE)
 
-## Getting Started
+## Getting Started with `uv`
 
-Follow these instructions to set up and run the project locally.
+This project uses `uv` as an all-in-one package and environment manager. The following steps outline the correct, `uv`-native workflow.
 
 ### 1. Prerequisites
 
-- Python 3.10+
-- An active Google AI Studio API key.
+-   Python 3.12+
+-   `uv` (can be installed with `pip install uv`)
+-   An API key for at least one supported LLM provider (Google, OpenAI, or Groq).
 
-### 2. Installation
+### 2. Environment Setup
 
-1.  **Clone the repository:**
+1.  **Clone the Repository**
     ```bash
     git clone <your-repository-url>
     cd ai-cover-letter
     ```
 
-2.  **Create a virtual environment using `uv`:**
+2.  **Create the Virtual Environment**
+    This command creates a standard Python virtual environment in a `.venv` directory.
     ```bash
     uv venv
     ```
-    This will create a `.venv` directory in your project folder.
 
-3.  **Install dependencies from `pyproject.toml`:**
+3.  **Activate the Environment**
+    Activating the environment configures your shell to use the Python interpreter and tools from within `.venv`. This is standard practice and makes development easier.
     ```bash
-    uv pip install -e ".[all]"
+    source .venv/bin/activate
     ```
-    This command installs the project in editable mode along with all optional dependencies defined in `pyproject.toml`.
+    *After activation, you can run commands like `python`, `pytest`, and `uvicorn` directly.* 
 
-### 3. Configuration
+### 3. Dependency Installation
 
-1.  **Create an environment file:**
-    Copy the example `.env.example` file to a new `.env` file.
+With the environment active, install all project dependencies listed in `pyproject.toml`.
+```bash
+uv pip install -e ".[all]"
+```
+*This command installs the project in editable mode (`-e`) along with all optional dependency groups (`[all]`). It is used for the initial setup.* 
+
+**Note on `uv add`**: To add a *new* package to the project later, you would use `uv add <package-name>`.
+
+### 4. Application Configuration
+
+1.  **Create your `.env` file** from the example:
     ```bash
     cp .env.example .env
     ```
 
-2.  **Set your environment variables:**
-    Open the `.env` file and add your Google API key:
-    ```env
-    DATABASE_URL="sqlite:///./app.db"
-    GOOGLE_API_KEY="your_google_api_key_here"
-    SECRET_KEY="your_super_secret_key_for_jwt"
-    ALGORITHM="HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES=30
-    ```
+2.  **Edit the `.env` file**, setting `ACTIVE_LLM_SERVICE` and providing the corresponding API key and a unique `JWT_SECRET_KEY`.
 
-### 4. Database Migration
+### 5. Database Migration
 
-Run the Alembic migrations to set up your database schema:
+Apply the database schema using Alembic. Since the environment is active, you can call `alembic` directly.
 ```bash
-uv run alembic upgrade head
+alembic upgrade head
 ```
 
-### 5. Running the Application
+### 6. Run the Application
 
-Start the FastAPI server using `uv run`:
+Start the FastAPI server with hot-reloading.
 ```bash
-uv run uvicorn main:app --reload
+uvicorn app.main:app --reload
 ```
-`uv run` automatically executes the command within the project's virtual environment, so you don't need to activate it manually.
+The API will be available at `http://127.0.0.1:8000`.
 
-The application will be available at `http://127.0.0.1:8000`.
+## Running Tests
 
-## Testing
-
-To run the complete test suite, use `uv run`:
+To run the complete test suite, simply run `pytest` from the root directory (while the environment is active).
 ```bash
-uv run pytest
+pytest
 ```
+*Alternatively, without activating the environment, you could use `uv run pytest`.*

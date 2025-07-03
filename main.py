@@ -1,13 +1,9 @@
 # Python standard library - Core language functionality
 from contextlib import asynccontextmanager
-from pathlib import Path
-import nltk
 
 # FastAPI framework - Web application components
 from fastapi import FastAPI, Request, status
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
-
+from fastapi.responses import JSONResponse
 
 # Application-specific imports - Local modules
 from app.api import api_router
@@ -45,40 +41,5 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
         content={"detail": "An unexpected internal server error occurred."},
     )
 
-# Define base directory
-BASE_DIR = Path(__file__).resolve().parent
-
-# Mount static files
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
-
 # Include API router
 app.include_router(api_router, prefix="/api")
-
-
-# UI route
-@app.get("/ui", response_class=HTMLResponse)
-async def read_ui(request: Request):
-    with open(BASE_DIR / "static" / "index.html") as f:
-        html_content = f.read()
-    return HTMLResponse(content=html_content)
-
-
-# Redirect root to UI
-@app.get("/", response_class=HTMLResponse)
-async def redirect_to_ui():
-    logger.info("Root endpoint accessed - redirecting to UI")
-    return HTMLResponse(
-        '<html><head><meta http-equiv="refresh" content="0;url=/ui"></head></html>'
-    )
-
-
-if __name__ == "__main__":
-    import uvicorn
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Run the FastAPI application.")
-    parser.add_argument("--port", type=int, default=8000, help="Port to run the server on.")
-    args = parser.parse_args()
-
-    logger.info(f"Starting server via __main__ on port {args.port}")
-    uvicorn.run("main:app", host="127.0.0.1", port=args.port, reload=True)

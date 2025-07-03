@@ -25,8 +25,8 @@ class Settings(BaseSettings):
 
     # --- LLM Settings ---
     # ACTIVE_LLM_SERVICE: str = "GEMINI"
-    # ACTIVE_LLM_SERVICE: str = "OPENAI"
-    ACTIVE_LLM_SERVICE: str = "GROQ"
+    ACTIVE_LLM_SERVICE: str = "OPENAI"
+    # ACTIVE_LLM_SERVICE: str = "GROQ"
 
     # --- Gemini Settings ---
     GOOGLE_API_KEY: Optional[str] = None
