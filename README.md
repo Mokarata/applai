@@ -4,19 +4,19 @@ This project is a backend application designed to streamline the job application
 
 This project was developed as a learning exercise to explore modern backend technologies, API design, and the practical application of a modular, protocol-driven architecture for AI services.
 
-## Architectural Highlights
+## Key Features & Architecture
 
--   **Protocol-Driven LLM Services**: The core of the application is a protocol-driven service layer (`LLMServiceProtocol`). This allows for hot-swapping LLM providers (Gemini, OpenAI, Groq) via a single configuration setting, without changing any application code. Each service adheres to the same interface for generating both plain text and structured, Pydantic-validated output.
--   **Backend API Logic**: The application is structured as a FastAPI application, with endpoints for user management, job management, and AI service integration.
--   **Configuration-First Design**: The application is configured entirely through environment variables, managed by Pydantic's `BaseSettings`. This includes a master switch (`ACTIVE_LLM_SERVICE`) to select the AI provider.
+This project is built on a clean, layered architecture that emphasizes separation of concerns and modularity, making it both scalable and maintainable.
 
-## Core Features
+-   **Distinct API and Service Layers**: The application is clearly divided into two main layers:
+    -   The **API Layer**, built with **FastAPI**, is responsible for handling all incoming HTTP requests, routing, and data validation.
+    -   The **Service Layer** contains all the core business logic. It orchestrates database operations, manages user and job data, and interacts with the AI models. This separation ensures that the API layer remains lean and focused on communication, while the complex logic is encapsulated within the services.
 
--   **Modular LLM Integration**: Supports Google Gemini, OpenAI, and Groq out-of-the-box.
--   **Secure User Management**: Standard endpoints for user creation, profile updates, and JWT-based authentication.
--   **Structured Data Extraction**: Uses LangChain and Pydantic parsers to reliably extract structured information (e.g., company details, job skills) from unstructured text.
--   **Automated Cover Letter Generation**: Merges user data with extracted job details to produce tailored cover letters.
--   **Database Migrations**: Employs Alembic for robust and version-controlled database schema management.
+-   **Protocol-Driven LLM Services**: At the heart of the AI integration is the `LLMServiceProtocol`. This powerful design pattern defines a standard interface for all AI providers (like Gemini, OpenAI, or Groq). It allows the application to switch between different LLMs via a single configuration change, without altering any code. This makes the system incredibly flexible and easy to extend with new AI models in the future.
+
+-   **Structured Output Handling**: A key challenge with LLMs is getting reliable, structured data. This project solves that by using **Pydantic** models to define the exact output structure required from the AI. This ensures that the data extracted from documents is always consistent, validated, and ready to be used by the application, eliminating unpredictable results.
+
+-   **Core Technologies**: The backend is built with a modern stack including **Python 3.12**, **FastAPI** for the API, **SQLAlchemy** and **Alembic** for database management, and **LangChain** for orchestrating LLM interactions.
 
 ## Tech Stack
 
