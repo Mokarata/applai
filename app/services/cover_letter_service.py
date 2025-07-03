@@ -142,143 +142,83 @@ class CoverLetterService:
         ]
         return "\n".join(filter(None, parts))
 
-    async def generate_cover_letter(
+    async def generate_cover_letter_instance(
         self,
         cover_letter_data: CoverLetterCreate,
         user_id: int,
         job_id: int,
-        current_user: User,
     ) -> CoverLetter:
         """
-        Generates a cover letter using an LLM service based on user and job data,
-        then saves it to the database. Uses structured JSON prompts.
+        Generates a cover letter using an LLM service but does NOT save it.
+        Returns an in-memory CoverLetter model instance.
         """
-        logger.info(f"Generating cover letter for user_id: {user_id}, job_id: {job_id}")
+        logger.info(f"Generating cover letter instance for user_id: {user_id}, job_id: {job_id}")
         try:
-            # 1. Fetch required data
             user = self._get_user(user_id)
             job = self._get_job(job_id)
-            logger.debug(
-                f"DEBUG TRACE: Fetched user: {user.id if user else 'None'}, job: {job.id if job else 'None'}"
-            )
 
-            # Extract generation options with defaults
-            options = (
-                cover_letter_data.generation_options
-                if cover_letter_data.generation_options is not None
-                else GenerationOptions()
-            )
-            style = options.style
-            language = options.language
-            tone = options.tone
-            length = options.length
-            logger.debug(
-                f"DEBUG TRACE: GenerationOptions: style={style}, language={language}, tone={tone}, length={length}"
-            )
+            options = cover_letter_data.generation_options or GenerationOptions()
 
-            # 2. Prepare input variables for the prompt templates
-            # Use Pydantic response models for consistent and maintainable data serialization
-            user_details_dict = UserResponse.model_validate(user).model_dump(
-                exclude_unset=True, exclude_none=True
-            )
-            job_details_dict = JobResponse.model_validate(job).model_dump(
-                exclude_unset=True, exclude_none=True
-            )
+            user_details_dict = UserResponse.model_validate(user).model_dump(exclude_unset=True, exclude_none=True)
+            job_details_dict = JobResponse.model_validate(job).model_dump(exclude_unset=True, exclude_none=True)
 
-            # Prepare final input variables, serializing complex objects to JSON strings
             input_vars = {
-                "job_details": json.dumps(
-                    job_details_dict, indent=2, default=json_serial
-                ),
-                "user_details": json.dumps(
-                    user_details_dict, indent=2, default=json_serial
-                ),
-                "style": style,
-                "language": language,
-                "tone": tone,
-                "length": length,
+                "job_details": json.dumps(job_details_dict, indent=2, default=json_serial),
+                "user_details": json.dumps(user_details_dict, indent=2, default=json_serial),
+                "style": options.style,
+                "language": options.language,
+                "tone": options.tone,
+                "length": options.length,
                 "current_date": date.today().isoformat(),
             }
-            logger.debug(
-                f"Input variables prepared for LLM service: {list(input_vars.keys())}"
+
+            generated_data: CoverLetterStructure = await self.llm_service.generate_structured_output(
+                system_prompt=cover_letter_prompts.COVER_LETTER_SYSTEM,
+                user_prompt=cover_letter_prompts.COVER_LETTER_USER,
+                input_vars=input_vars,
+                output_schema=CoverLetterStructure,
             )
 
-            # 3. Generate structured data from LLM
-            active_llm_service = self.llm_service
-            logger.info(f"Using LLM service: {type(active_llm_service).__name__}")
-
-            generated_data: CoverLetterStructure = (
-                await active_llm_service.generate_structured_output(
-                    system_prompt=cover_letter_prompts.COVER_LETTER_SYSTEM,
-                    user_prompt=cover_letter_prompts.COVER_LETTER_USER,
-                    input_vars=input_vars,
-                    output_schema=CoverLetterStructure,
-                )
-            )
-            logger.info("Successfully generated structured data from LLM.")
-            logger.debug(
-                f"LLM output (CoverLetterStructure): {generated_data.model_dump_json(indent=2)}"
-            )
-
-            # 4. Assemble and save the cover letter
-            job_title = (
-                job.extracted_data.get("title", "Untitled Job")
-                if job.extracted_data
-                else "Untitled Job"
-            )
-            letter_title = (
-                generated_data.title
-                if hasattr(generated_data, "title") and generated_data.title
-                else f"Cover Letter for {job_title}"
-            )
-
+            job_title = job.extracted_data.get("title", "Untitled Job") if job.extracted_data else "Untitled Job"
+            letter_title = generated_data.title or f"Cover Letter for {job_title}"
             final_cover_letter_text = self._assemble_cover_letter_text(generated_data)
-            logger.debug("Assembled structured data into final cover letter text.")
 
-            # Create CoverLetter DB instance
-            db_cover_letter = CoverLetter(
+            # Return an in-memory instance, not saved to DB
+            return CoverLetter(
                 user_id=user_id,
                 job_id=job_id,
                 title=letter_title,
-                generation_options=options.model_dump() if options else None,
+                generation_options=options.model_dump(),
                 sections=generated_data.model_dump(),
                 text=final_cover_letter_text,
                 llm_service_used=settings.ACTIVE_LLM_SERVICE,
             )
-
-            self.db.add(db_cover_letter)
-            self.db.commit()
-            self.db.refresh(db_cover_letter)
-            logger.info(
-                f"Cover letter {db_cover_letter.id} saved successfully for user {user_id}, job {job_id}."
-            )
-            return db_cover_letter
-
-        except HTTPException as http_exc:
-            # Re-raise HTTP exceptions to be handled by FastAPI
-            raise http_exc
+        except HTTPException as he:
+            logger.warning(f"Propagating HTTPException from service layer: {he.detail}")
+            raise he
         except Exception as e:
-            # Log the full traceback for any other exceptions
-            logger.error(
-                f"An unexpected error occurred in generate_cover_letter: {e}",
-                exc_info=True,
-            )
-            # Also log the state of relevant variables
-            logger.error(f"Traceback: {traceback.format_exc()}")
-            logger.error(f"User ID: {user_id}, Job ID: {job_id}")
-            if "options" in locals():
-                logger.error(
-                    f"Generation Options: {options.model_dump_json() if options else 'None'}"
-                )
-            if "generated_data" in locals():
-                logger.error(
-                    f"Generated Data from LLM: {generated_data.model_dump_json() if generated_data else 'None'}"
-                )
-
+            logger.error(f"Error generating cover letter instance: {e}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="An internal error occurred during cover letter generation.",
+                detail="An error occurred during cover letter generation.",
             )
+
+    def create_cover_letter(
+        self, cover_letter_data: CoverLetterCreate, user_id: int, current_user: User
+    ) -> CoverLetter:
+        """
+        Saves a cover letter to the database.
+        """
+        # Authorization check can be added here if needed, e.g., current_user.id == user_id
+        logger.info(f"Creating cover letter for user_id: {user_id}")
+
+        db_cover_letter = CoverLetter(**cover_letter_data.model_dump(), user_id=user_id)
+
+        self.db.add(db_cover_letter)
+        self.db.commit()
+        self.db.refresh(db_cover_letter)
+        logger.info(f"Saved cover letter {db_cover_letter.id} for user {user_id}.")
+        return db_cover_letter
 
     async def update_cover_letter(
         self, cover_letter_id: int, update_data: CoverLetterUpdate, current_user: User
@@ -323,6 +263,38 @@ class CoverLetterService:
         cover_letter = self.get_cover_letter(cover_letter_id, current_user)
         self.db.delete(cover_letter)
         self.db.commit()
+
+    def delete_cover_letters(self, cover_letter_ids: List[int], current_user: User):
+        """Deletes multiple cover letters after checking authorization for each."""
+        if not cover_letter_ids:
+            return
+
+        letters_to_delete = (
+            self.db.query(CoverLetter)
+            .filter(CoverLetter.id.in_(cover_letter_ids))
+            .all()
+        )
+
+        if len(letters_to_delete) != len(set(cover_letter_ids)):
+            logger.warning("Some cover letter IDs provided for deletion were not found.")
+
+        for letter in letters_to_delete:
+            self._authorize_cover_letter_access(letter, current_user)
+
+        try:
+            for letter in letters_to_delete:
+                self.db.delete(letter)
+            self.db.commit()
+            logger.info(f"Successfully deleted cover letters with IDs: {cover_letter_ids}")
+        except Exception as e:
+            self.db.rollback()
+            logger.error(
+                f"Database error during bulk cover letter deletion: {e}", exc_info=True
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Could not delete cover letters from the database.",
+            ) from e
 
     def get_cover_letter_by_id(self, cover_letter_id: int) -> Optional[CoverLetter]:
         logger.info(f"Fetching cover letter id: {cover_letter_id}")

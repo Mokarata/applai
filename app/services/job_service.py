@@ -227,3 +227,34 @@ class JobService:
         self.db.delete(job)
         self.db.commit()
         logger.info(f"Successfully deleted job {job_id}")
+
+    def delete_jobs(self, job_ids: List[int], current_user: User):
+        """Deletes multiple jobs after checking authorization for each."""
+        if not job_ids:
+            return
+
+        # Fetch all jobs to be deleted in a single query
+        jobs_to_delete = self.db.query(Job).filter(Job.id.in_(job_ids)).all()
+
+        if len(jobs_to_delete) != len(set(job_ids)):
+            # This check handles cases where some job_ids do not exist.
+            # You might want to log this or handle it differently based on requirements.
+            logger.warning("Some job IDs provided for deletion were not found.")
+
+        # Authorize access for all jobs before proceeding
+        for job in jobs_to_delete:
+            self._authorize_job_access(job, current_user)
+
+        # Perform the bulk deletion
+        try:
+            for job in jobs_to_delete:
+                self.db.delete(job)
+            self.db.commit()
+            logger.info(f"Successfully deleted jobs with IDs: {job_ids}")
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            logger.error(f"Database error during bulk job deletion: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Could not delete jobs from the database.",
+            ) from e

@@ -9,6 +9,7 @@ dependencies = [
     "fastapi==0.109.2",
     "google-generativeai>=0.3.1",
     "langchain-text-splitters",
+    "nltk>=3.8.1",
     "pdfminer.six==20221105",
     "passlib==1.7.4",
     "prettier>=0.0.7",
@@ -35,8 +36,10 @@ dependencies = [
 
 ]
 
-[tool.setuptools.packages.find]
-where = ["app"]
+
+[tool.setuptools]
+py-modules = ["main"]
+packages = ["app"]
 
 [build-system]
 requires = ["setuptools>=61.0"]

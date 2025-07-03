@@ -8,7 +8,7 @@ from app.api.dependencies import get_job_service
 from app.core.dependencies import get_current_user
 # Import app dependencies
 from app.db import User, get_db
-from app.schemas.job import JobCreate, JobResponse, JobUpdate
+from app.schemas.job import JobCreate, JobDelete, JobResponse, JobUpdate
 from app.services.job_service import JobService
 
 # Initialize APIRouter
@@ -66,14 +66,16 @@ def update_job(
     )
 
 
-@router.delete("/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_job(
-    job_id: int,
+@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
+def delete_jobs(
+    jobs_to_delete: JobDelete,
     job_service: JobService = Depends(get_job_service),
     current_user: User = Depends(get_current_user),
 ):
-    """Delete a specific job by its ID, checking for ownership or admin rights."""
-    job_service.delete_job(job_id=job_id, current_user=current_user)
+    """Delete one or more jobs by their IDs, checking for ownership or admin rights."""
+    job_service.delete_jobs(
+        job_ids=jobs_to_delete.job_ids, current_user=current_user
+    )
     return None
 
 

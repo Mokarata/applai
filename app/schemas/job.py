@@ -1,7 +1,7 @@
 """Schemas for job management."""
 
 from datetime import date, datetime
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 from pydantic import (BaseModel, ConfigDict, Field, HttpUrl, field_validator)
 
@@ -33,6 +33,14 @@ class JobExtractedData(BaseModel):
         None,
         description="Date the job was posted",
         examples=["2023-01-01", "2023-01-02"],
+    )
+    submission_deadline: Optional[date] = Field(
+        None,
+        description="Date the job submission deadline",
+        examples=["2023-01-01", "2023-01-02"],
+    )
+    hiring_manager_name: Optional[str] = Field(
+        None, description="Name of the hiring manager, if available"
     )
 
     @field_validator("date_posted", mode='before')
@@ -117,6 +125,13 @@ class JobUpdate(BaseModel):
     )
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# --- Response Schema ---
+class JobDelete(BaseModel):
+    """Schema for deleting one or more jobs."""
+
+    job_ids: List[int] = Field(..., description="A list of job IDs to delete.")
 
 
 # --- Response Schema ---

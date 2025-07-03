@@ -95,10 +95,13 @@ class CoverLetterBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class CoverLetterCreate(BaseModel):
-    """Schema for initiating cover letter generation."""
+class CoverLetterCreate(CoverLetterBase):
+    """Schema for creating a new cover letter. Used for both generation and saving."""
 
-    generation_options: Optional[GenerationOptions] = None
+    job_id: Optional[int] = Field(None, description="The ID of the job this letter is for.")
+    llm_service_used: Optional[str] = Field(
+        None, description="The LLM service used for generation."
+    )
 
 
 class CoverLetterUpdate(BaseModel):
@@ -113,6 +116,15 @@ class CoverLetterUpdate(BaseModel):
     text: Optional[str] = Field(
         None, description="The updated text for the cover letter."
     )
+
+
+class CoverLetterGenerationResponse(CoverLetterBase):
+    """Schema for the response of a generated, unsaved cover letter."""
+
+    user_id: int
+    job_id: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CoverLetterResponse(BaseModel):
@@ -134,3 +146,11 @@ class CoverLetterResponse(BaseModel):
 
 # --- Output Schema for LLM Structured Output ---
 T_output = TypeVar("T_output", bound=BaseModel)
+
+
+class CoverLetterDelete(BaseModel):
+    """Schema for deleting one or more cover letters."""
+
+    cover_letter_ids: List[int] = Field(
+        ..., description="A list of cover letter IDs to be deleted."
+    )

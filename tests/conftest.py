@@ -18,7 +18,7 @@ from app.api.dependencies import (
 from app.core.config import settings
 from app.db.database import Base
 from app.db.models import Company, Job, User
-from app.schemas import CompanyCreate, JobCreate, UserCreate
+from app.schemas import CompanyCreate, JobCreate, UserCreate, CoverLetterStructure
 from app.services import (
     CompanyService,
     JobService,
@@ -73,12 +73,23 @@ def mock_llm_service() -> MagicMock:
     }
     mock.extract_job_details = AsyncMock(return_value=extract_return_value)
 
-    # Default mock for other structured output generation (e.g., company analysis)
-    # This simulates the CompanyAnalysis schema
-    analysis_return_value = MagicMock()
-    analysis_return_value.contact_info = {"website": "mock.com"}
-    analysis_return_value.analytics = {"industry": "tech"}
-    mock.generate_structured_output = AsyncMock(return_value=analysis_return_value)
+    # Default mock for structured output generation (cover letters)
+    cover_letter_return_value = CoverLetterStructure(
+        title="Mock Cover Letter",
+        applicant_name="Mock Applicant",
+        recipient_name="Hiring Manager",
+        recipient_title="Lead Recruiter",
+        recipient_company="Mock Company Inc.",
+        recipient_address="123 Mockingbird Lane, Mocksville, MC 12345",
+        greeting="Dear Hiring Manager,",
+        introduction="This is a mock introduction.",
+        skills="I have many mock skills.",
+        projects="I have worked on many mock projects.",
+        company_fit="I am a great fit for this mock company.",
+        conclusion="This is a mock conclusion.",
+        closing="Sincerely,",
+    )
+    mock.generate_structured_output = AsyncMock(return_value=cover_letter_return_value)
 
     return mock
 

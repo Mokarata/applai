@@ -10,18 +10,21 @@ from app.core.dependencies import get_current_user
 # App dependencies
 from app.db import User
 # Application schemas - Data validation
-from app.schemas.cover_letter import (CoverLetterCreate, CoverLetterResponse,
-                                      CoverLetterUpdate)
+from app.schemas.cover_letter import (
+    CoverLetterCreate,
+    CoverLetterDelete,
+    CoverLetterGenerationResponse,
+    CoverLetterResponse,
+    CoverLetterUpdate,
+)
 # Application services - Business logic
 from app.services.cover_letter_service import CoverLetterService
 
 router = APIRouter()
 
 
-@router.post(
-    "/", response_model=CoverLetterResponse, status_code=status.HTTP_201_CREATED
-)
-async def create_cover_letter(
+@router.post("/generate", response_model=CoverLetterGenerationResponse)
+async def generate_cover_letter_only(
     *,
     cover_letter_service: CoverLetterService = Depends(get_cover_letter_service),
     job_id: int = Query(..., description="ID of the job to base the letter on."),
@@ -29,23 +32,47 @@ async def create_cover_letter(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Creates a new cover letter for the authenticated user.
-    Requires job_id as a query parameter and generation_options in the body.
+    Generates a cover letter without saving it to the database.
     """
     try:
-        new_cover_letter = await cover_letter_service.generate_cover_letter(
+        generated_instance = await cover_letter_service.generate_cover_letter_instance(
             cover_letter_data=cover_letter_in,
             user_id=current_user.id,
             job_id=job_id,
-            current_user=current_user,
         )
-        return new_cover_letter
+        return generated_instance
     except HTTPException as http_exc:
         raise http_exc
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}",
+            detail=f"An unexpected error occurred during generation: {str(e)}",
+        )
+
+
+@router.post("/", response_model=CoverLetterResponse, status_code=status.HTTP_201_CREATED)
+def create_cover_letter(
+    *,
+    cover_letter_service: CoverLetterService = Depends(get_cover_letter_service),
+    cover_letter_in: CoverLetterCreate,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Saves a previously generated cover letter to the database.
+    """
+    try:
+        saved_letter = cover_letter_service.create_cover_letter(
+            cover_letter_data=cover_letter_in,
+            user_id=current_user.id,
+            current_user=current_user,
+        )
+        return saved_letter
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred while saving: {str(e)}",
         )
 
 
@@ -114,17 +141,17 @@ async def update_cover_letter(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.delete("/{cover_letter_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_cover_letter(
+@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
+def delete_cover_letters(
     *,
-    cover_letter_id: int,
+    letters_to_delete: CoverLetterDelete,
     cover_letter_service: CoverLetterService = Depends(get_cover_letter_service),
     current_user: User = Depends(get_current_user),
 ):
-    """Delete a cover letter by ID, checking for ownership or admin rights."""
+    """Delete one or more cover letters by their IDs."""
     try:
-        cover_letter_service.delete_cover_letter(
-            cover_letter_id=cover_letter_id, current_user=current_user
+        cover_letter_service.delete_cover_letters(
+            cover_letter_ids=letters_to_delete.cover_letter_ids, current_user=current_user
         )
         return None
     except HTTPException as http_exc:
