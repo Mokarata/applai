@@ -2,8 +2,6 @@
 
 This project is a backend application designed to streamline the job application process by automatically generating personalized cover letters. It features a provider-agnostic AI service layer, allowing it to integrate with multiple Large Language Models (LLMs) like Google Gemini, OpenAI's GPT, and Groq.
 
-This project was developed as a learning exercise to explore modern backend technologies, API design, and the practical application of a modular, protocol-driven architecture for AI services.
-
 ## Key Features & Architecture
 
 This project features a clean, layered architecture that emphasizes separation of concerns and modularity.
