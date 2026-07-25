@@ -26,7 +26,7 @@ const Dropdown = ({ label, options, selected, onSelect }) => {
     <div className="dropdown-container" ref={dropdownRef}>
       <button className="button-secondary dropdown-toggle" onClick={() => setIsOpen(!isOpen)}>
         {label}: {selected}
-        <i className="material-icons">{isOpen ? 'arrow_drop_up' : 'arrow_drop_down'}</i>
+        <i className="material-symbols-rounded">{isOpen ? 'arrow_drop_up' : 'arrow_drop_down'}</i>
       </button>
       {isOpen && (
         <div className="dropdown-menu">
@@ -36,7 +36,10 @@ const Dropdown = ({ label, options, selected, onSelect }) => {
               className={`dropdown-item ${selected === option ? 'selected' : ''}`}
               onClick={() => handleSelect(option)}
             >
-              {option}
+              <span>{option}</span>
+              {selected === option && (
+                <i className="material-symbols-rounded check">check</i>
+              )}
             </button>
           ))}
         </div>

@@ -1,0 +1,9 @@
+# Ignore all database files and logs
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+logs/
+
+# But keep the directory structure
+!.gitignore

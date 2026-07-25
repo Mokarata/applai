@@ -55,10 +55,10 @@ const SavedLettersPanel = ({ coverLetters, onCoverLetterSelect, selectedCoverLet
   };
 
   return (
-    <div className="panel">
+    <div className="panel panel--right">
       <div className="panel-header">
         <div className='sidebar-title-container'>
-          <i className="material-icons">archive</i>
+          <i className="material-symbols-rounded">archive</i>
           <span>Saved Letters</span>
         </div>
       </div>
@@ -77,7 +77,7 @@ const SavedLettersPanel = ({ coverLetters, onCoverLetterSelect, selectedCoverLet
               </div>
               {selectedLetterIds.size > 0 && (
                 <button onClick={handleDeleteSelected} className="delete-selected-btn">
-                  <i className="material-icons">delete</i>
+                  <i className="material-symbols-rounded">delete</i>
                   <span>Remove selected</span>
                 </button>
               )}
@@ -92,7 +92,7 @@ const SavedLettersPanel = ({ coverLetters, onCoverLetterSelect, selectedCoverLet
               >
                 <div className="job-item-content">
                   <button className="job-item-menu" onClick={(e) => toggleMenu(letter.id, e)}>
-                    <i className="material-icons">more_horiz</i>
+                    <i className="material-symbols-rounded">more_vert</i>
                   </button>
                   {activeMenuLetterId === letter.id && (
                     <div className="job-item-menu-content">

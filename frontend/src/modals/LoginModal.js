@@ -27,12 +27,12 @@ const LoginModal = ({ onLoginSuccess }) => {
         <div className="modal-body">
           <form onSubmit={handleLogin}>
             <div className="form-group">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="email">Email or Username</label>
               <input
-                type="email"
+                type="text"
                 id="email"
                 className="form-control"
-                placeholder="Enter your email"
+                placeholder="Enter your email or username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

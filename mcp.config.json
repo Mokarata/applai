@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "coding_standards": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "mcp[cli]",
+        "mcp",
+        "run",
+        "/Users/mokara/Dev/coding-standards-mcp/server.py"
+      ],
+      "cwd": "/Users/mokara/Dev/coding-standards-mcp"
+    }
+  }
+}

@@ -68,10 +68,18 @@ const AddJobModal = ({ onClose, onJobAdded, userId }) => {
           <button className="close-button" onClick={onClose}>&times;</button>
         </div>
         <div className="source-options">
-          <button className={`source-option ${activeSource === 'url' ? 'active' : ''}`} onClick={() => setActiveSource('url')}>Via URL</button>
-          <button className={`source-option ${activeSource === 'text' ? 'active' : ''}`} onClick={() => setActiveSource('text')}>Via Text</button>
-          <button className={`source-option ${activeSource === 'file' ? 'active' : ''}`} onClick={() => setActiveSource('file')}>Via File</button>
-          <button className={`source-option ${activeSource === 'manual' ? 'active' : ''}`} onClick={() => setActiveSource('manual')}>Manual</button>
+          <button className={`source-option ${activeSource === 'url' ? 'active' : ''}`} onClick={() => setActiveSource('url')}>
+            <i className="material-symbols-rounded">link</i> Via URL
+          </button>
+          <button className={`source-option ${activeSource === 'text' ? 'active' : ''}`} onClick={() => setActiveSource('text')}>
+            <i className="material-symbols-rounded">article</i> Via Text
+          </button>
+          <button className={`source-option ${activeSource === 'file' ? 'active' : ''}`} onClick={() => setActiveSource('file')}>
+            <i className="material-symbols-rounded">upload_file</i> Via File
+          </button>
+          <button className={`source-option ${activeSource === 'manual' ? 'active' : ''}`} onClick={() => setActiveSource('manual')}>
+            <i className="material-symbols-rounded">edit_square</i> Manual
+          </button>
         </div>
         <div className="source-panels">
           <div id="source-url" className={`source-panel ${activeSource === 'url' ? 'active' : ''}`}>
@@ -108,7 +116,6 @@ const AddJobModal = ({ onClose, onJobAdded, userId }) => {
           </div>
         </div>
         <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>Cancel</button>
           <button className="btn-primary" onClick={handleAddJob}>Add Job</button>
         </div>
       </div>

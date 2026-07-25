@@ -19,8 +19,8 @@ __pycache__/
 .coverage.*
 
 # 4. Virtual environments
-/venv
-/.venv
+venv/
+.venv/
 
 # 5. Logs & OS files
 logs/

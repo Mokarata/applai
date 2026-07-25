@@ -19,7 +19,7 @@ const SettingsModal = ({
         <div className="modal-header">
           <h2>Configure Chat</h2>
           <button className="button-icon" onClick={onClose}>
-            <i className="material-icons">close</i>
+            <i className="material-symbols-rounded">close</i>
           </button>
         </div>
         <div className="modal-body">

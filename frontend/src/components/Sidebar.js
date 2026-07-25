@@ -9,11 +9,7 @@ const Sidebar = ({ jobs, onAddJobClick, onJobSelect, selectedJob, onJobsDeleted,
     if (e.target.closest('.job-item-checkbox, .job-item-menu, .job-item-menu-content')) {
       return;
     }
-    const jobWithTitle = {
-      ...job,
-      title: job?.extracted_data?.title,
-    };
-    onJobSelect(jobWithTitle);
+    // This function will now only handle expanding/collapsing the job details
     setExpandedJobId(prevId => (prevId === job.id ? null : job.id));
   };
 
@@ -46,10 +42,17 @@ const Sidebar = ({ jobs, onAddJobClick, onJobSelect, selectedJob, onJobsDeleted,
 
   const handleSelectJob = (jobId, e) => {
     const newSelectedJobIds = new Set(selectedJobIds);
+    const jobToSelect = jobs.find(j => j.id === jobId);
+
     if (e.target.checked) {
       newSelectedJobIds.add(jobId);
+      onJobSelect(jobToSelect); // Set this job as the active one for the chat
     } else {
       newSelectedJobIds.delete(jobId);
+      // If the deselected job was the active one, clear the selection
+      if (selectedJob && selectedJob.id === jobId) {
+        onJobSelect(null);
+      }
     }
     onSelectedJobIdsChange(newSelectedJobIds);
   };
@@ -61,11 +64,11 @@ const Sidebar = ({ jobs, onAddJobClick, onJobSelect, selectedJob, onJobsDeleted,
 
 
   return (
-    <div className="panel">
+    <div className="panel panel--sidebar">
       {/* Jobs Section */}
       <div className="panel-header">
         <div className="sidebar-title-container">
-          <i className="material-icons">work</i>
+          <i className="material-symbols-rounded">work</i>
           <span>Jobs</span>
         </div>
         <button onClick={onAddJobClick} className="button-icon-text">+</button>
@@ -85,7 +88,7 @@ const Sidebar = ({ jobs, onAddJobClick, onJobSelect, selectedJob, onJobsDeleted,
               </div>
               {selectedJobIds.size > 0 && (
                 <button onClick={handleDeleteSelected} className="delete-selected-btn">
-                  <i className="material-icons">delete</i>
+                  <i className="material-symbols-rounded">delete</i>
                   <span>Remove source</span>
                 </button>
               )}
@@ -101,7 +104,7 @@ const Sidebar = ({ jobs, onAddJobClick, onJobSelect, selectedJob, onJobsDeleted,
               >
                 <div className="job-item-content">
                   <button className="job-item-menu" onClick={(e) => toggleMenu(job.id, e)}>
-                    <i className="material-icons">more_horiz</i>
+                    <i className="material-symbols-rounded">more_vert</i>
                   </button>
                   {activeMenuJobId === job.id && (
                     <div className="job-item-menu-content">
@@ -110,8 +113,17 @@ const Sidebar = ({ jobs, onAddJobClick, onJobSelect, selectedJob, onJobsDeleted,
                     </div>
                   )}
                   <div className="job-item-title-container">
-                    <span className="job-item-title">{job.extracted_data?.title || 'Processing...'}</span><br/>
-                    <span className="job-item-company">{job.extracted_data?.company_name || 'No company'}</span>
+                    {job.status === 'processing' ? (
+                      <div className="skeleton-group">
+                        <div className="skeleton skeleton-line w-80"></div>
+                        <div className="skeleton skeleton-line w-50"></div>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="job-item-title">{job.extracted_data?.title || 'Untitled'}</span><br/>
+                        <span className="job-item-company">{job.extracted_data?.company_name || 'No company'}</span>
+                      </>
+                    )}
                   </div>
                   <input
                     type="checkbox"

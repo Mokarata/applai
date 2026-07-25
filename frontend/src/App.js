@@ -9,8 +9,6 @@ import LoginModal from './modals/LoginModal';
 import * as api from './services/api';
 import './assets/css/main.css';
 
-const USER_ID = 1; // Hardcoded for now
-
 function App() {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -18,49 +16,48 @@ function App() {
   const [coverLetters, setCoverLetters] = useState([]);
   const pollingRef = useRef(null);
   const [isAddJobModalOpen, setAddJobModalOpen] = useState(false);
-    const [isProfileModalOpen, setProfileModalOpen] = useState(false);
+  const [isProfileModalOpen, setProfileModalOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
   const [selectedJobIds, setSelectedJobIds] = useState(new Set());
   const [selectedCoverLetter, setSelectedCoverLetter] = useState(null);
 
-
+  // Check for authentication token on initial load
   useEffect(() => {
-    // Check for a token in localStorage on initial load
     const token = localStorage.getItem('accessToken');
     if (token) {
+      api.setAuthHeader(token); // Set auth header for subsequent requests
       setIsAuthenticated(true);
     }
-  }, []); // Run only once on component mount
+  }, []);
 
+  // Fetch user profile and data once authenticated
   useEffect(() => {
-    const loadData = async () => {
-      if (!isAuthenticated) return; // Don't load data if not authenticated
+    const loadInitialData = async () => {
+      if (isAuthenticated) {
+        try {
+          const userData = await api.getCurrentUserProfile();
+          setUser(userData);
 
-      try {
-        const [userData, jobsData, coverLettersData] = await Promise.all([
-          api.getUserProfile(USER_ID),
-          api.getJobs(USER_ID),
-          api.getCoverLetters(USER_ID)
-        ]);
-
-        setUser(userData);
-        setJobs(jobsData);
-        setCoverLetters(coverLettersData);
-      } catch (error) {
-        console.error('Failed to load initial data:', error);
-        if (error.name === 'ApiError' && error.status === 401) {
-          // Token is likely expired or invalid, force logout
-          handleLogout();
+          const [jobsData, coverLettersData] = await Promise.all([
+            api.getJobs(userData.id),
+            api.getCoverLetters(userData.id)
+          ]);
+          setJobs(jobsData);
+          setCoverLetters(coverLettersData);
+        } catch (error) {          
+          console.error('Failed to load user data. Logging out.', error);
+          handleLogout(); // If token is invalid, log out
         }
       }
     };
-
-    loadData();
-  }, [isAuthenticated]); // This effect runs when isAuthenticated changes
+    loadInitialData();
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const managePolling = () => {
-          const needsPolling = jobs.some(job => job.status === 'processing');
+      if (!user) return; // Don't poll if there's no user
+
+      const needsPolling = jobs.some(job => job.status === 'processing');
 
       if (!needsPolling) {
         if (pollingRef.current) {
@@ -75,7 +72,7 @@ function App() {
         console.log("Starting polling for pending jobs...");
         pollingRef.current = setInterval(async () => {
           try {
-            const latestJobs = await api.getJobs(USER_ID);
+            const latestJobs = await api.getJobs(user.id);
             
             setJobs(currentJobs => {
               let wasChanged = false;
@@ -84,10 +81,11 @@ function App() {
                   return job;
                 }
                 const latestVersion = latestJobs.find(j => j.id === job.id);
-                if (latestVersion && latestVersion.extracted_data) {
-                  console.log(`Job ${latestVersion.id} has been updated.`);
+                // Revert to checking the status field as the source of truth.
+                if (latestVersion && latestVersion.status !== 'processing') {
+                  console.log(`Job ${latestVersion.id} has been updated to status: ${latestVersion.status}.`);
                   wasChanged = true;
-                  return { ...latestVersion, status: 'completed' };
+                  return latestVersion; // Return the complete, updated job object from the server.
                 }
                 return job;
               });
@@ -113,10 +111,9 @@ function App() {
     return () => {
       if (pollingRef.current) {
         clearInterval(pollingRef.current);
-        pollingRef.current = null;
       }
     };
-  }, [jobs, USER_ID]);
+  }, [jobs, user]);
 
   const handleLoginSuccess = () => {
     setIsAuthenticated(true);
@@ -140,8 +137,9 @@ function App() {
   };
 
     const handleLetterGenerated = async () => {
+    if (!user) return;
     try {
-      const coverLettersData = await api.getCoverLetters(USER_ID);
+      const coverLettersData = await api.getCoverLetters(user.id);
       setCoverLetters(coverLettersData);
     } catch (error) {
       console.error("Failed to refresh cover letters", error);
@@ -179,12 +177,13 @@ function App() {
   };
 
   const handleProfileSave = async (profileData) => {
+    if (!user) return;
     try {
       const nameParts = profileData.full_name.split(' ');
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(' ');
 
-      const updatedUser = await api.updateUserProfile(USER_ID, {
+      const updatedUser = await api.updateUserProfile(user.id, {
         first_name: firstName,
         last_name: lastName,
         email: profileData.email,
@@ -230,7 +229,7 @@ function App() {
         />
       </div>
 
-      {isAddJobModalOpen && <AddJobModal onClose={() => setAddJobModalOpen(false)} onJobAdded={handleJobAdded} userId={USER_ID} />}
+      {isAddJobModalOpen && <AddJobModal onClose={() => setAddJobModalOpen(false)} onJobAdded={handleJobAdded} userId={user?.id} />}
       {isProfileModalOpen && <UserProfileModal user={user} onClose={() => setProfileModalOpen(false)} onSave={handleProfileSave} />}
     </div>
   );

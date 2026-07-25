@@ -9,38 +9,30 @@ class ApiError extends Error {
 }
 
 // A helper function to handle API requests and responses
-let accessToken = localStorage.getItem('accessToken');
+const globalHeaders = {
+  'Content-Type': 'application/json',
+  'Cache-Control': 'no-cache',
+};
 
 const request = async (endpoint, options = {}) => {
-  const headers = {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-    'Pragma': 'no-cache',
-    'Expires': '0',
-    ...options.headers,
-  };
-
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
-  }
-
-  // For FormData, let the browser set the Content-Type
-  if (!(options.body instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
-  }
-
   const config = {
     ...options,
-    headers,
-
+    headers: { ...globalHeaders, ...options.headers },
   };
+
+  // For FormData, let the browser set the Content-Type header automatically
+  if (config.body instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
+
   const url = `${API_BASE_URL}${endpoint}`;
   const response = await fetch(url, config);
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({})); // Gracefully handle non-JSON error responses
+    const errorData = await response.json().catch(() => ({}));
     throw new ApiError(errorData.detail || `HTTP error! status: ${response.status}`, response.status);
   }
-  // For 204 No Content responses
+
   if (response.status === 204) {
     return null;
   }
@@ -49,8 +41,8 @@ const request = async (endpoint, options = {}) => {
 
 // --- Auth API --- //
 export const logout = () => {
-  accessToken = null;
   localStorage.removeItem('accessToken');
+  delete globalHeaders['Authorization'];
 };
 
 export const login = async (username, password) => {
@@ -64,16 +56,26 @@ export const login = async (username, password) => {
   });
 
   if (data.access_token) {
-    accessToken = data.access_token;
-    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('accessToken', data.access_token);
+    setAuthHeader(data.access_token);
   }
   return data;
 };
 
-// --- User Profile API --- //
-export const getUserProfile = async (userId) => {
-  return await request(`/users/${userId}`);
+export const setAuthHeader = (token) => {
+  if (token) {
+    globalHeaders['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete globalHeaders['Authorization'];
+  }
 };
+
+
+
+// --- User Profile API --- //
+export const getUserProfile = (userId) => request(`/users/${userId}`);
+
+export const getCurrentUserProfile = () => request('/users/me');
 
 export const updateUserProfile = async (userId, profileData) => {
   return await request(`/users/${userId}`, {
@@ -111,7 +113,7 @@ export const deleteJobs = async (jobIds) => {
 
 
 // --- Cover Letter API --- //
-export const generateCoverLetter = async (jobId, options) => {
+export const generateCoverLetter = async (jobId, options, signal) => {
   // Calls the new generation endpoint.
   const endpoint = `/cover-letters/generate?job_id=${jobId}`;
   return await request(endpoint, {
@@ -149,11 +151,17 @@ export const deleteCoverLetters = async (coverLetterIds) => {
 };
 
 // --- Chat API --- //
-export const generateResponse = async (userId, jobId, message) => {
-    const endpoint = `/chat/?user_id=${userId}&job_id=${jobId}`;
-    return await request(endpoint, {
+export const sendChatMessage = async (sessionId, userMessage, aiMessage = null, signal) => {
+    const payload = {
+        session_id: sessionId,
+        user_message: userMessage,
+        ai_message: aiMessage, // Pass the last AI message for context
+    };
+
+    return await request('/chat/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: message }),
+        body: JSON.stringify(payload),
+        signal, // Pass the signal to the fetch request
     });
 };
