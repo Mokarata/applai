@@ -18,7 +18,8 @@ __pycache__/
 *.coverage
 .coverage.*
 
-# 4. Virtual environments
+# 4. Virtual environments & dependencies
+node_modules/
 venv/
 .venv/
 
