@@ -1,50 +1,64 @@
 # Environment & Secrets
-# Ignore the .env file containing secrets
 .env
-
-# Do not ignore the example file
+.env.*
 !.env.example
+*.pem
+*.key
 
-# 2. Database files
+# Database Files
 *.db
+*.sqlite
 *.sqlite3
 
-# 3. Python cache & build artifacts
+# Python Cache & Build Artifacts
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 *.coverage
+.coverage
 .coverage.*
+htmlcov/
+*.egg-info/
+dist/
+build/
+eggs/
+*.egg
 
-# 4. Virtual environments & dependencies
+# Virtual Environments & Dependencies
 node_modules/
 venv/
 .venv/
+ENV/
+env/
 
-# 5. Logs & OS files
+# Frontend Builds & Testing
+/build
+/dist
+.pnp
+.pnp.js
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs & OS Files
 logs/
 *.log
 .DS_Store
+Thumbs.db
 
-# 6. IDE/editor config
+# IDE & Tool Configs
 .vscode/
 .idea/
-*.swp
-
-# 7. Custom/project-specific
+.windsurf/
 .windsurfrules
-.windsurf
 Info.md
+*.swp
+*.swo
 
-# 8. Ignore test/migration artifacts (if any appear in future)
+# Temporary & Backup Files
 *.bak
 *.tmp
-
-# 9. Ignore resources/private data (optional, if you add user data)
-# resources/**/private*
-
-# 10. Alembic
-# The alembic/versions directory contains crucial migration scripts and MUST be tracked.
-# Other generated files like caches are already covered by __pycache__/.
